@@ -398,7 +398,7 @@ public static class DutzCartoonDialogGui
 
         return ClampPanelHeight(MeasureStackedPanelHeight(
             "CHOOSE DIFFICULTY",
-            "Addict + crocodile chase speed (Hard = 7.0 m/s)",
+            "Crossroad chasers (Hard = 30 m/s)",
             buttonLabels,
             detailLines,
             Application.isMobilePlatform ? "Tap a level to start" : "Pick a level to start"));

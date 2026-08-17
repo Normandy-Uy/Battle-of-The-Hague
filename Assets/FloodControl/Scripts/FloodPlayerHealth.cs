@@ -2,13 +2,13 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Flood Control Player1 hit points, 3-life system, and death dialog.
+/// Flood Control Player1 hit points, 6-life system, and death dialog.
 /// Pipe contact burns HP over time. Lives gate Respawn vs Restart (rewarded stub).
 /// </summary>
 [DisallowMultipleComponent]
 public class FloodPlayerHealth : MonoBehaviour
 {
-    const int DefaultMaxLives = 3;
+    const int DefaultMaxLives = 6;
     const float SafePoseLookbackSeconds = 0.75f;
     const int SafePoseBufferSize = 32;
 
@@ -77,6 +77,9 @@ public class FloodPlayerHealth : MonoBehaviour
         && (activeInstance.showDeathDialog
             || activeInstance.restartAdPending
             || FloodRewardedAdStub.IsShowing);
+
+    public static bool IsShowingAnyDeathDialog =>
+        activeInstance != null && activeInstance.showDeathDialog;
 
     void Awake()
     {

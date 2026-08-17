@@ -8,20 +8,61 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Places TextMesh Pro slogans on highway straight side walls in Dutz_Level02.
-/// Edit slogans on the "Highway Wall Slogans" object in the scene Inspector.
-/// Menu: Tools / Dutz / Place Highway Wall Slogans
+/// Places TextMesh Pro slogans on highway straight side walls (Straights 2 and 6).
+/// Edit slogans on the "Highway Wall Slogans" object in each level scene Inspector.
+/// Menu: Assets / Dutz Authoring / Rebuild Highway Wall Slogans
 /// </summary>
 public static class DutzHighwayWallSloganPlacer
 {
-    const string ScenePath = "Assets/Scenes/Dutz_Level02.unity";
+    const string Level00ScenePath = "Assets/Scenes/Dutz_Level00.unity";
+    const string Level01ScenePath = "Assets/Scenes/Dutz_Level01.unity";
+    const string Level02ScenePath = "Assets/Scenes/Dutz_Level02.unity";
+    const string Level03ScenePath = "Assets/Scenes/Dutz_Level03.unity";
     const string SettingsPath = "Assets/Characters/DutzHighwayWallSlogans.asset";
     const string BoardObjectName = "Highway Wall Slogans";
     const string SlogansRootName = "HighwayWallSlogans";
     const int MaxLabelsPerSide = 2;
     const float MaxWallFaceInset = 0.15f;
     static readonly string[] WallSloganSegmentNames = { "Highway Straight 2", "Highway Straight 6" };
+    static readonly string Level00FallbackSegmentName = "Highway Straight 3";
+    static readonly string[] SupportedLevelScenePaths =
+    {
+        Level00ScenePath,
+        Level01ScenePath,
+        Level02ScenePath,
+        Level03ScenePath,
+    };
     const string DefaultTmpFontPath = "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset";
+
+    [MenuItem("Assets/Dutz Authoring/Rebuild Highway Wall Slogans (Level 00)")]
+    public static void RebuildLevel00FromMenu()
+    {
+        if (EditorApplication.isPlaying)
+        {
+            EditorUtility.DisplayDialog("Wall Slogans", "Exit Play mode first.", "OK");
+            return;
+        }
+
+        PlaceInScene(Level00ScenePath, log: true);
+    }
+
+    [MenuItem("Assets/Dutz Authoring/Rebuild Highway Wall Slogans (All Levels)")]
+    public static void RebuildAllLevelsFromMenu()
+    {
+        if (EditorApplication.isPlaying)
+        {
+            EditorUtility.DisplayDialog("Wall Slogans", "Exit Play mode first.", "OK");
+            return;
+        }
+
+        RebuildAllLevels(log: true);
+    }
+
+    /// <summary>Batch: -executeMethod DutzHighwayWallSloganPlacer.RebuildLevel00Batch</summary>
+    public static void RebuildLevel00Batch() => PlaceInScene(Level00ScenePath, log: true);
+
+    /// <summary>Batch: -executeMethod DutzHighwayWallSloganPlacer.RebuildAllLevelsBatch</summary>
+    public static void RebuildAllLevelsBatch() => RebuildAllLevels(log: true);
 
     public static void PlaceFromMenu()
     {
@@ -31,7 +72,7 @@ public static class DutzHighwayWallSloganPlacer
             return;
         }
 
-        if (!PlaceInShowcase(log: true))
+        if (!PlaceInScene(Level02ScenePath, log: true))
         {
             EditorUtility.DisplayDialog(
                 "Wall Slogans",
@@ -43,7 +84,79 @@ public static class DutzHighwayWallSloganPlacer
     }
 
     /// <summary>Batch: -executeMethod DutzHighwayWallSloganPlacer.PlaceInShowcase</summary>
-    public static void PlaceInShowcase() => PlaceInShowcase(log: false);
+    public static void PlaceInShowcase() => PlaceInScene(Level02ScenePath, log: false);
+
+    static void RebuildAllLevels(bool log)
+    {
+        EnsureTmpEssentials();
+        EnsureSettingsAsset();
+
+        var any = false;
+        foreach (var scenePath in SupportedLevelScenePaths)
+        {
+            if (!File.Exists(scenePath))
+                continue;
+
+            if (PlaceInScene(scenePath, log))
+                any = true;
+        }
+
+        if (log && !any)
+            Debug.LogWarning("[Dutz] No highway wall slogans were rebuilt.");
+    }
+
+    static bool PlaceInScene(string scenePath, bool log)
+    {
+        EnsureTmpEssentials();
+        EnsureSettingsAsset();
+
+        var font = LoadFont();
+        if (font == null)
+        {
+            if (log)
+                Debug.LogError("[Dutz] TMP font not found. Import TMP Essential Resources first.");
+            return false;
+        }
+
+        if (!File.Exists(scenePath))
+        {
+            if (log)
+                Debug.LogWarning($"[Dutz] Scene not found: {scenePath}");
+            return false;
+        }
+
+        var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+        var board = EnsureSceneBoard();
+        if (board.slogans == null || board.slogans.Length == 0)
+        {
+            if (log)
+                Debug.LogError($"[Dutz] Highway Wall Slogans board has no slogans in {scenePath}.");
+            return false;
+        }
+
+        ClearAll();
+
+        var segments = FindAllHighwaySegments();
+        if (segments.Count == 0)
+        {
+            if (log)
+                Debug.LogWarning($"[Dutz] No highway straight wall-slogan segments found in {scenePath}.");
+            return false;
+        }
+
+        var totalLabels = 0;
+        foreach (var segment in segments)
+            totalLabels += PlaceOnSegment(segment, board, font);
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+
+        if (log)
+            Debug.Log($"[Dutz] Placed {totalLabels} wall slogans on {segments.Count} highway straight segment(s) in {scenePath}. " +
+                      $"Edit slogans on '{BoardObjectName}' in the hierarchy.");
+
+        return totalLabels > 0;
+    }
 
     public static void ApplyFromBoard(DutzHighwayWallSloganBoard board)
     {
@@ -104,50 +217,6 @@ public static class DutzHighwayWallSloganPlacer
         Debug.Log($"[Dutz] Rebuilt {totalLabels} wall slogans on {segments.Count} segment(s).");
     }
 
-    static bool PlaceInShowcase(bool log)
-    {
-        EnsureTmpEssentials();
-        EnsureSettingsAsset();
-
-        var font = LoadFont();
-        if (font == null)
-        {
-            Debug.LogError("[Dutz] TMP font not found. Import TMP Essential Resources first.");
-            return false;
-        }
-
-        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-        var board = EnsureSceneBoard();
-        if (board.slogans == null || board.slogans.Length == 0)
-        {
-            Debug.LogError("[Dutz] Highway Wall Slogans board has no slogans.");
-            return false;
-        }
-
-        ClearAll();
-
-        var segments = FindAllHighwaySegments();
-        if (segments.Count == 0)
-        {
-            Debug.LogWarning("[Dutz] No highway straight wall-slogan segments found in scene.");
-            return false;
-        }
-
-        var totalLabels = 0;
-        foreach (var segment in segments)
-            totalLabels += PlaceOnSegment(segment, board, font);
-
-        EditorSceneManager.MarkSceneDirty(scene);
-        EditorSceneManager.SaveScene(scene);
-
-        if (log)
-            Debug.Log($"[Dutz] Placed {totalLabels} wall slogans on {segments.Count} highway straight segment(s). " +
-                      $"Edit slogans on '{BoardObjectName}' in the hierarchy. " +
-                      "In Scene view, select 'HighwayWallSlogans' roots and press F to frame them.");
-
-        return totalLabels > 0;
-    }
-
     static DutzHighwayWallSloganBoard EnsureSceneBoard()
     {
         var board = Object.FindObjectOfType<DutzHighwayWallSloganBoard>();
@@ -181,7 +250,7 @@ public static class DutzHighwayWallSloganPlacer
             return 0;
 
         var bounds = collider != null ? collider.bounds : renderer.bounds;
-        GetRoadAndWallAxes(bounds, out var roadAxis, out var wallAxis);
+        DutzHighwayPhotoBillboardPlacer.GetSegmentTrackAxesPublic(segment, bounds, out var roadAxis, out var wallAxis);
         var wallSpan = ProjectSpan(bounds, wallAxis);
         var wallMid = (wallSpan.min + wallSpan.max) * 0.5f;
 
@@ -275,28 +344,50 @@ public static class DutzHighwayWallSloganPlacer
     static List<GameObject> FindAllHighwaySegments()
     {
         var list = new List<GameObject>();
-        foreach (var root in SceneManager.GetActiveScene().GetRootGameObjects())
+        foreach (var segmentName in ResolveWallSloganSegmentNames())
         {
-            if (root != null)
-                CollectHighwaySegments(root.transform, list);
+            var segment = FindHighwaySegmentByName(segmentName);
+            if (segment != null)
+                list.Add(segment);
         }
 
         return list;
     }
 
-    static void CollectHighwaySegments(Transform node, List<GameObject> list)
+    static IEnumerable<string> ResolveWallSloganSegmentNames()
     {
-        foreach (var segmentName in WallSloganSegmentNames)
+        var scenePath = SceneManager.GetActiveScene().path;
+        if (scenePath != Level00ScenePath)
         {
-            if (node.name == segmentName)
-            {
-                list.Add(node.gameObject);
-                break;
-            }
+            foreach (var segmentName in WallSloganSegmentNames)
+                yield return segmentName;
+            yield break;
         }
 
-        for (var i = 0; i < node.childCount; i++)
-            CollectHighwaySegments(node.GetChild(i), list);
+        yield return WallSloganSegmentNames[0];
+
+        if (FindHighwaySegmentByName(WallSloganSegmentNames[1]) != null)
+            yield return WallSloganSegmentNames[1];
+        else if (FindHighwaySegmentByName(Level00FallbackSegmentName) != null)
+            yield return Level00FallbackSegmentName;
+    }
+
+    static GameObject FindHighwaySegmentByName(string segmentName)
+    {
+        if (string.IsNullOrEmpty(segmentName))
+            return null;
+
+        var direct = GameObject.Find(segmentName);
+        if (direct != null)
+            return direct;
+
+        foreach (var transform in Object.FindObjectsOfType<Transform>(true))
+        {
+            if (transform != null && transform.name == segmentName)
+                return transform.gameObject;
+        }
+
+        return null;
     }
 
     static int ClearAll()
@@ -310,6 +401,18 @@ public static class DutzHighwayWallSloganPlacer
 
             Undo.DestroyObjectImmediate(existing.gameObject);
             count++;
+        }
+
+        foreach (var root in SceneManager.GetActiveScene().GetRootGameObjects())
+        {
+            if (root == null)
+                continue;
+
+            if (root.name.StartsWith(SlogansRootName) || root.name == "Slogan_L" || root.name == "Slogan_R")
+            {
+                Undo.DestroyObjectImmediate(root);
+                count++;
+            }
         }
 
         return count;
@@ -333,7 +436,7 @@ public static class DutzHighwayWallSloganPlacer
             return 0;
 
         var bounds = collider != null ? collider.bounds : renderer.bounds;
-        GetRoadAndWallAxes(bounds, out var roadAxis, out var wallAxis);
+        DutzHighwayPhotoBillboardPlacer.GetSegmentTrackAxesPublic(segment, bounds, out var roadAxis, out var wallAxis);
         var roadSpan = ProjectSpan(bounds, roadAxis);
         var wallSpan = ProjectSpan(bounds, wallAxis);
         var length = roadSpan.max - roadSpan.min;
@@ -406,20 +509,6 @@ public static class DutzHighwayWallSloganPlacer
 
         var sideOffset = isRightWall ? slotsPerSide : 0;
         return slogans[(sideOffset + slotIndex) % slogans.Count];
-    }
-
-    static void GetRoadAndWallAxes(Bounds bounds, out Vector3 roadAxis, out Vector3 wallAxis)
-    {
-        if (bounds.extents.x >= bounds.extents.z)
-        {
-            roadAxis = Vector3.right;
-            wallAxis = Vector3.forward;
-        }
-        else
-        {
-            roadAxis = Vector3.forward;
-            wallAxis = Vector3.right;
-        }
     }
 
     static Vector3 PointOnAxis(Vector3 center, Vector3 axis, float axisValue)

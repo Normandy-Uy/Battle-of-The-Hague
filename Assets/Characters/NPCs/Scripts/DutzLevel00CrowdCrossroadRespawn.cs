@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Level 00 — when the player reaches Highway Cross Road, duplicate Bridge 1 crowd NPCs onto
-/// saved scene spawn slots (Level00CrossroadChaseSpawns, 7×6 formation). They chase the player.
+/// saved scene spawn slots (Level00CrossroadChaseSpawns). Up to 12 bulk chasers chase the player.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-195)]
@@ -16,6 +16,7 @@ public class DutzLevel00CrowdCrossroadRespawn : MonoBehaviour
     const string CitizensRootName = "Level00CrowdCitizens";
     const string ChasersRootName = "Level00CrowdCrossroadChasers";
     const string SpawnSlotsRootName = "Level00CrossroadChaseSpawns";
+    public const int MaxActiveChasers = 12;
     const float TriggerMarginMeters = 0.5f;
     const float ProximityFallbackMeters = 8f;
 
@@ -266,7 +267,7 @@ public class DutzLevel00CrowdCrossroadRespawn : MonoBehaviour
 
         if (spawnSlots.Count == 0)
         {
-            LogInitFailure($"no crossroad spawn slots under {SpawnSlotsRootName} (expected 7×6 formation)");
+            LogInitFailure($"no crossroad spawn slots under {SpawnSlotsRootName}");
             return false;
         }
 
@@ -428,9 +429,10 @@ public class DutzLevel00CrowdCrossroadRespawn : MonoBehaviour
         Vector3 firstSpawnPos = playerPosition;
         Vector3 sumSpawnPos = Vector3.zero;
 
-        for (var i = 0; i < spawnSlots.Count; i++)
+        var activeSlots = SelectActiveSpawnSlots(spawnSlots);
+        for (var i = 0; i < activeSlots.Count; i++)
         {
-            var slot = spawnSlots[i];
+            var slot = activeSlots[i];
             var sourceIndex = i % snapshots.Count;
             if (snapshots[sourceIndex].Source == null)
                 continue;
@@ -458,10 +460,33 @@ public class DutzLevel00CrowdCrossroadRespawn : MonoBehaviour
 
         var avgSpawnPos = spawned > 0 ? sumSpawnPos / spawned : playerPosition;
         Debug.Log(
-            $"[Dutz] Level 00 crossroad crowd duplicated onto {spawnSlots.Count} scene slot(s) " +
-            $"({spawned} chaser(s), chase {DutzLevel00CrossroadCitizenChaser.ChaseSpeed} m/s); originals unchanged. " +
+            $"[Dutz] Level 00 crossroad crowd duplicated onto {activeSlots.Count}/{spawnSlots.Count} scene slot(s) " +
+            $"({spawned} chaser(s) @ {DutzLevel00CrossroadCitizenChaser.ChaserScaleMultiplier}× scale, " +
+            $"chase {DutzLevel00CrossroadCitizenChaser.ChaseSpeed} m/s); originals unchanged. " +
             $"playerPos={playerPosition}, avgSpawnPos={avgSpawnPos}, firstSpawnPos={firstSpawnPos}, " +
             $"playerToAvgDist={Vector3.Distance(playerPosition, avgSpawnPos):F1}m.");
+    }
+
+    static List<SpawnSlot> SelectActiveSpawnSlots(IReadOnlyList<SpawnSlot> all)
+    {
+        var result = new List<SpawnSlot>(MaxActiveChasers);
+        if (all == null || all.Count == 0)
+            return result;
+
+        if (all.Count <= MaxActiveChasers)
+        {
+            for (var i = 0; i < all.Count; i++)
+                result.Add(all[i]);
+            return result;
+        }
+
+        for (var i = 0; i < MaxActiveChasers; i++)
+        {
+            var index = i * all.Count / MaxActiveChasers;
+            result.Add(all[index]);
+        }
+
+        return result;
     }
 
     Vector3 SnapSpawnWorld(Vector3 world, Collider colliderHint)

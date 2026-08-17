@@ -178,6 +178,16 @@ public class SimpleCitizensNpcPhysics : MonoBehaviour
         chaseIn3D = false;
     }
 
+    public void MultiplyMass(float multiplier)
+    {
+        if (multiplier <= 0f || Mathf.Approximately(multiplier, 1f))
+            return;
+
+        mass *= multiplier;
+        if (rb != null)
+            rb.mass = mass;
+    }
+
     void ClearFlightMode()
     {
         chaseIn3D = false;

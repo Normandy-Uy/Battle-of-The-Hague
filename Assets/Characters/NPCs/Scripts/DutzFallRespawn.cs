@@ -42,9 +42,13 @@ public class DutzFallRespawn : MonoBehaviour
     Vector3 lastSafeRoadPosition;
     Quaternion lastSafeRoadRotation = Quaternion.identity;
     bool hasLastSafeRoad;
+    static DutzFallRespawn activeInstance;
     static bool forceFieldSuitEnsuredForScene;
 
     public bool IsShowingRespawnDialog => showingDialog;
+
+    public static bool IsShowingAnyDeathDialog =>
+        activeInstance != null && activeInstance.showingDialog;
 
     public bool IsSpawnGraceActive => Time.time < spawnGraceUntil;
 
@@ -59,6 +63,7 @@ public class DutzFallRespawn : MonoBehaviour
 
     void Awake()
     {
+        activeInstance = this;
         player = GetComponent<DutzPlayerController>();
         characterController = GetComponent<CharacterController>();
         playerParachute = GetComponent<DutzPlayerParachute>();
@@ -78,6 +83,9 @@ public class DutzFallRespawn : MonoBehaviour
     {
         if (player != null)
             player.Jumped -= OnPlayerJumped;
+
+        if (activeInstance == this)
+            activeInstance = null;
     }
 
     void OnPlayerJumped() => jumpFallGraceUntil = Time.time + JumpFallGraceSeconds;
@@ -458,9 +466,8 @@ public class DutzFallRespawn : MonoBehaviour
         showingDialog = false;
         SetPlayerDeathAnimation(false);
 
-        // Senate / Airport: full start spawn so suitcases/coins can be re-gathered.
-        bool useStartSpawn =
-            DutzCollectibleProgress.IsLevel01 || DutzCollectibleProgress.IsLevel02;
+        // Senate: full start spawn so suitcases/coins can be re-gathered.
+        bool useStartSpawn = DutzCollectibleProgress.IsLevel01;
 
         if (useStartSpawn || !hasDeathPose)
             player.Respawn();
@@ -486,6 +493,17 @@ public class DutzFallRespawn : MonoBehaviour
         // Prefer last grounded road pose — death while falling is mid-air / below the deck.
         var pose = hasLastSafeRoad ? lastSafeRoadPosition : deathWorldPosition;
         var facing = hasLastSafeRoad ? lastSafeRoadRotation : deathWorldRotation;
+
+        if (!hasLastSafeRoad)
+        {
+            var segment = DutzHighwayDirection.FindNearestTrackSegment(pose);
+            if (segment != null)
+            {
+                var closest = DutzHighwayDirection.GetClosestPointOnSegment(segment, pose);
+                pose.x = closest.x;
+                pose.z = closest.z;
+            }
+        }
 
         Vector3 back = facing * Vector3.back;
         back.y = 0f;

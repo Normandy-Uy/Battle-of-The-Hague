@@ -292,7 +292,7 @@ public static class DutzLevel07ImpeachmentVideo
         Object.Destroy(host);
     }
 
-    /// <summary>Play Sara acquitted, then reload Level07 respecting 3-lives + rewarded Restart.</summary>
+    /// <summary>Play Sara acquitted, then reload Level07 respecting lives + rewarded Restart.</summary>
     public static IEnumerator PlayFailThenReloadLevel()
     {
         Time.timeScale = 1f;

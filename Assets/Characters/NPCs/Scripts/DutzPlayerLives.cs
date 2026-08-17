@@ -1,12 +1,12 @@
 using UnityEngine;
 
 /// <summary>
-/// Shared 3-life counter for campaign levels (L00–L03, L07).
+/// Shared 6-life counter for campaign levels (L00–L03, L07).
 /// Flood Control keeps its own lives on FloodPlayerHealth.
 /// </summary>
 public static class DutzPlayerLives
 {
-    public const int MaxLives = 3;
+    public const int MaxLives = 6;
 
     static int current = MaxLives;
     static bool preserveAcrossNextLoad;

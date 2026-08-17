@@ -670,6 +670,12 @@ public static class DutzHighwayPhotoBillboardPlacer
 
     public static GameObject FindHighwaySegmentByName(string segmentName) => FindSegmentByName(segmentName);
 
+    public static void GetSegmentTrackAxesPublic(
+        GameObject segment,
+        Bounds bounds,
+        out Vector3 roadAxis,
+        out Vector3 wallAxis) => GetSegmentTrackAxes(segment, bounds, out roadAxis, out wallAxis);
+
     public static DutzHighwayPhotoBillboardSettings LoadBillboardSettings() =>
         AssetDatabase.LoadAssetAtPath<DutzHighwayPhotoBillboardSettings>(SettingsPath)
         ?? DutzHaguePhotoBillboardBuilder.EnsureSettings();
@@ -727,6 +733,67 @@ public static class DutzHighwayPhotoBillboardPlacer
         var panel = GameObject.CreatePrimitive(PrimitiveType.Plane);
         Undo.RegisterCreatedObjectUndo(panel, "Place EDSA Highway Murals");
         panel.name = $"Mural_{segment.name}_{sideSuffix}_{panelIndexZeroBased + 1:00}";
+        panel.transform.SetParent(parent, false);
+        panel.transform.position = boardCenter;
+        panel.transform.rotation = Quaternion.LookRotation(faceDir, Vector3.up) * Quaternion.Euler(90f, 0f, 0f);
+        panel.transform.localScale = new Vector3(panelWidth / 10f, 1f, panelHeight / 10f);
+        Object.DestroyImmediate(panel.GetComponent<Collider>());
+
+        var muralMaterial = new Material(materialTemplate) { mainTexture = texture };
+        muralMaterial.name = string.IsNullOrEmpty(materialInstanceName)
+            ? $"EdsaMural_{texture.name}"
+            : materialInstanceName;
+        panel.GetComponent<MeshRenderer>().sharedMaterial = muralMaterial;
+        return true;
+    }
+
+    /// <summary>
+    /// Places one EDSA panel at a world road point using explicit width/height (track-continuous layout).
+    /// </summary>
+    public static bool PlaceEdsaTrackPanel(
+        GameObject segment,
+        Transform parent,
+        Vector3 roadPoint,
+        bool isLeftSide,
+        float panelWidth,
+        float panelHeight,
+        Texture2D texture,
+        Material materialTemplate,
+        DutzHighwayPhotoBillboardSettings settings,
+        string materialInstanceName,
+        string panelName)
+    {
+        if (segment == null || parent == null || texture == null || materialTemplate == null || settings == null)
+            return false;
+
+        var collider = segment.GetComponent<MeshCollider>();
+        var renderer = segment.GetComponent<Renderer>();
+        if (collider == null && renderer == null)
+            return false;
+
+        var bounds = collider != null ? collider.bounds : renderer.bounds;
+        GetSegmentTrackAxes(segment, bounds, out _, out var wallAxis);
+        var wallSpan = ProjectSpan(bounds, wallAxis);
+        var sideSuffix = isLeftSide ? "L" : "R";
+        var wallAxisValue = isLeftSide ? wallSpan.min : wallSpan.max;
+        var outward = GetOutwardFromHighwayEdge(bounds, wallAxis, wallAxisValue);
+
+        roadPoint.y = bounds.min.y;
+        var centerY = bounds.min.y + panelHeight * 0.5f;
+        SnapToWallFace(
+            collider, bounds, roadPoint, centerY, wallAxis, wallAxisValue, outward,
+            settings.elevatedLateralOffset, out var boardCenter, out var faceDir);
+
+        faceDir.y = 0f;
+        if (faceDir.sqrMagnitude < 0.001f)
+            faceDir = -outward;
+        faceDir.Normalize();
+
+        var panel = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        Undo.RegisterCreatedObjectUndo(panel, "Place EDSA Highway Murals");
+        panel.name = string.IsNullOrEmpty(panelName)
+            ? $"Mural_{segment.name}_{sideSuffix}_00"
+            : panelName;
         panel.transform.SetParent(parent, false);
         panel.transform.position = boardCenter;
         panel.transform.rotation = Quaternion.LookRotation(faceDir, Vector3.up) * Quaternion.Euler(90f, 0f, 0f);

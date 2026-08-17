@@ -13,11 +13,13 @@ public class DutzPlayerController : MonoBehaviour
     public const string PlayerObjectName = "Player1";
 
     [Header("Movement")]
-    [SerializeField] float moveSpeed = 6f;
-    [SerializeField] float runSpeed = 10f;
+    [SerializeField] float moveSpeed = 15f;
+    [SerializeField] float runSpeed = 30f;
     [SerializeField] KeyCode runKey = KeyCode.LeftShift;
     [SerializeField] float jumpForce = 14f;
     public const float SuperJumpForceDefault = 28f;
+    /// <summary>Horizontal launch during Super Jump — matches old EDSA Player1 run override (30 m/s) so vault gaps still clear.</summary>
+    public const float SuperJumpHorizSpeed = 30f;
     const int Level07SuperJumpCharges = 4;
     float superJumpForce = SuperJumpForceDefault;
     [SerializeField] float gravity = -20f;
@@ -438,6 +440,7 @@ public class DutzPlayerController : MonoBehaviour
         DutzSuperPunchPickup.ResetOnPlayerRespawn();
         DutzSuperJumpPickup.ResetOnPlayerRespawn();
         GetComponent<DutzPlayerHitPoints>()?.ResetOnRespawn();
+        DutzDifficulty.ApplySeniorCitizenPerks(this);
 
         spawnFacingFramesRemaining = 8;
         hasCompletedInitialSpawn = true;
@@ -582,7 +585,10 @@ public class DutzPlayerController : MonoBehaviour
                 velocity.y = GetEffectiveJumpForce();
                 if (hasMoveInput)
                 {
-                    var jumpHoriz = moveDir * speed;
+                    var horizSpeed = GetEffectiveJumpForce() > jumpForce + 0.01f
+                        ? Mathf.Max(speed, SuperJumpHorizSpeed)
+                        : speed;
+                    var jumpHoriz = moveDir * horizSpeed;
                     if (horizontalVelocity.sqrMagnitude < jumpHoriz.sqrMagnitude)
                         horizontalVelocity = jumpHoriz;
                 }
@@ -822,6 +828,14 @@ public static class DutzDifficulty
     public const float HardSmallHippieChaseSpeed = 7f;
     public const float HardSmallHippieChaseAnimSpeed = 0.66f;
 
+    /// <summary>Highway Cross Road duplicate chasers only (12) — Bridge 1 crowd unchanged.</summary>
+    public const float EasyCrossroadChaseSpeed = 20f;
+    public const float MediumCrossroadChaseSpeed = 25f;
+    public const float HardCrossroadChaseSpeed = 30f;
+    public const float SeniorCitizenCrossroadChaseSpeed = 15f;
+    const float CrossroadChaseAnimReferenceSpeed = 30f;
+    const float CrossroadChaseAnimAtReference = 4.8f;
+
     static bool chosen;
     static DutzDifficultyLevel selected = DutzDifficultyLevel.Hard;
 
@@ -861,6 +875,23 @@ public static class DutzDifficulty
     public static float GetSmallHippieChaseAnimSpeed() =>
         HardSmallHippieChaseAnimSpeed * GetSpeedMultiplier(selected);
 
+    public static float GetCrossroadChaseSpeedForLevel(DutzDifficultyLevel level) => level switch
+    {
+        DutzDifficultyLevel.Easy => EasyCrossroadChaseSpeed,
+        DutzDifficultyLevel.Medium => MediumCrossroadChaseSpeed,
+        DutzDifficultyLevel.SeniorCitizen => SeniorCitizenCrossroadChaseSpeed,
+        _ => HardCrossroadChaseSpeed,
+    };
+
+    public static float GetCrossroadChaseSpeed() =>
+        HasChosen ? GetCrossroadChaseSpeedForLevel(selected) : HardCrossroadChaseSpeed;
+
+    public static float GetCrossroadChaseAnimSpeed()
+    {
+        var speed = GetCrossroadChaseSpeed();
+        return CrossroadChaseAnimAtReference * (speed / CrossroadChaseAnimReferenceSpeed);
+    }
+
     public static string GetDisplayName(DutzDifficultyLevel level) => level switch
     {
         DutzDifficultyLevel.Easy => "Easy",
@@ -879,31 +910,71 @@ public static class DutzDifficulty
             || sceneName == DutzMobileRuntime.Level02SceneName;
     }
 
+    public static bool IsEdsaLevel() =>
+        SceneManager.GetActiveScene().name == DutzMobileRuntime.Level00SceneName;
+
+    public static float GetEdsaCrossroadCrowdChaseSpeed() =>
+        GetCrossroadChaseSpeedForLevel(selected);
+
+    public static string GetDifficultyDialogTitle()
+    {
+        if (IsEdsaLevel())
+            return "CHOOSE DIFFICULTY — EDSA";
+
+        var sceneName = SceneManager.GetActiveScene().name;
+        if (sceneName == DutzMobileRuntime.Level01SceneName)
+            return "CHOOSE DIFFICULTY — SENATE";
+        if (sceneName == DutzMobileRuntime.Level02SceneName)
+            return "CHOOSE DIFFICULTY — AIRPORT";
+        if (sceneName == DutzMobileRuntime.Level03SceneName)
+            return "CHOOSE DIFFICULTY — HAGUE";
+
+        return "CHOOSE DIFFICULTY";
+    }
+
     public static string GetDifficultySubtitle()
     {
-        if (UsesCrocodileEnemies())
-            return "Addict + crocodile chase speed (Hard = 7.0 m/s)";
+        if (IsEdsaLevel())
+            return $"Crossroad chasers (Hard = {HardCrossroadChaseSpeed:0.#} m/s)";
 
-        return "Small addict chase speed (Hard = 7.0 m/s)";
+        if (UsesCrocodileEnemies())
+            return $"Rallyist + crocodile chase speed (Hard = {HardSmallHippieChaseSpeed:0.#} m/s)";
+
+        return $"Rallyist chase speed (Hard = {HardSmallHippieChaseSpeed:0.#} m/s)";
     }
 
     public static string GetDifficultyDetailText(DutzDifficultyLevel level)
     {
         if (level == DutzDifficultyLevel.SeniorCitizen)
         {
-            return UsesCrocodileEnemies()
-                ? "Unlimited force field  •  Police cannot capture (Senate)  •  Score ×1  •  GRAVITY STILL APPLIES."
-                : "Unlimited force field  •  Score ×1  •  GRAVITY STILL APPLIES.";
+            var sceneName = SceneManager.GetActiveScene().name;
+            if (sceneName == DutzMobileRuntime.Level00SceneName)
+            {
+                return $"Crossroad chasers {SeniorCitizenCrossroadChaseSpeed:0.#} m/s  •  " +
+                       "Unlimited force field  •  Super Jump  •  Score ×1  •  GRAVITY STILL APPLIES.";
+            }
+
+            if (sceneName == DutzMobileRuntime.Level01SceneName)
+                return "Unlimited force field  •  Super Jump  •  Police cannot capture  •  Score ×1  •  GRAVITY STILL APPLIES.";
+            if (sceneName == DutzMobileRuntime.Level02SceneName)
+                return "Unlimited force field  •  Super Jump  •  Score ×1  •  GRAVITY STILL APPLIES.";
+            return "Unlimited force field  •  Score ×1  •  GRAVITY STILL APPLIES.";
+        }
+
+        var score = GetScoreMultiplier(level);
+        if (IsEdsaLevel())
+        {
+            var crossroadSpeed = GetCrossroadChaseSpeedForLevel(level);
+            return $"Crossroad chasers {crossroadSpeed:0.#} m/s  •  Score ×{score}";
         }
 
         var speed = GetChaseSpeedForLevel(level);
-        var score = GetScoreMultiplier(level);
         if (UsesCrocodileEnemies())
         {
-            return $"Addicts {speed:0.#} m/s  •  Crocodiles {speed:0.#} m/s  •  Score ×{score}";
+            return $"Rallyist chase {speed:0.#} m/s  •  Crocodiles {speed:0.#} m/s  •  Score ×{score}";
         }
 
-        return $"Addict chase {speed:0.#} m/s  •  Score ×{score}";
+        return $"Rallyist chase {speed:0.#} m/s  •  Score ×{score}";
     }
 
     public static string GetDifficultyButtonLabel(DutzDifficultyLevel level, bool isDefault = false)
@@ -924,6 +995,26 @@ public static class DutzDifficulty
     };
 
     public static int GetScoreMultiplier() => GetScoreMultiplier(selected);
+
+    /// <summary>Senior Citizen perks: unlimited force field; Super Jump on EDSA, Senate, and Airport.</summary>
+    public static void ApplySeniorCitizenPerks(DutzPlayerController player)
+    {
+        if (player == null || !IsSeniorCitizenMode())
+            return;
+
+        var field = player.GetComponent<DutzForceField>();
+        if (field == null)
+            field = player.gameObject.AddComponent<DutzForceField>();
+        field.ActivatePermanent(player);
+
+        if (GrantsSeniorCitizenSuperJump(SceneManager.GetActiveScene().name))
+            player.EnableSuperJumpForLife();
+    }
+
+    static bool GrantsSeniorCitizenSuperJump(string sceneName) =>
+        sceneName == DutzMobileRuntime.Level00SceneName
+        || sceneName == DutzMobileRuntime.Level01SceneName
+        || sceneName == DutzMobileRuntime.Level02SceneName;
 }
 
 /// <summary>Start-of-game Easy / Medium / Hard picker (small addict chase speed only).</summary>
@@ -1008,7 +1099,7 @@ public class DutzDifficultySelect : MonoBehaviour
         GUI.depth = -3200;
         DutzCartoonDialogGui.DrawDimOverlay();
 
-        var title = "CHOOSE DIFFICULTY";
+        var title = DutzDifficulty.GetDifficultyDialogTitle();
         var subtitle = DutzDifficulty.GetDifficultySubtitle();
         var footer = Application.isMobilePlatform
             ? "Tap a level to start"
@@ -1130,7 +1221,7 @@ public class DutzDifficultySelect : MonoBehaviour
         DutzVehicleSpawn.ApplyLevel00DifficultyRules();
         DutzLevel00CrowdCrossroadRespawn.RefreshAfterDifficultyChosen();
         if (level == DutzDifficultyLevel.SeniorCitizen)
-            ActivateSeniorCitizenForceField();
+            DutzDifficulty.ApplySeniorCitizenPerks(player);
         awaitingSelection = false;
         player?.SetControlsLocked(false);
         if (!Application.isMobilePlatform)
@@ -1138,18 +1229,7 @@ public class DutzDifficultySelect : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
-        Debug.Log($"[Dutz] Difficulty: {DutzDifficulty.GetDisplayName(level)} (addict chase {DutzDifficulty.GetSmallHippieChaseSpeed():0.#} m/s).");
-    }
-
-    void ActivateSeniorCitizenForceField()
-    {
-        if (player == null)
-            return;
-
-        var field = player.GetComponent<DutzForceField>();
-        if (field == null)
-            field = player.gameObject.AddComponent<DutzForceField>();
-        field.ActivatePermanent(player);
+        Debug.Log($"[Dutz] Difficulty: {DutzDifficulty.GetDisplayName(level)} (rallyist chase {DutzDifficulty.GetSmallHippieChaseSpeed():0.#} m/s).");
     }
 }
 

@@ -25,6 +25,8 @@ public sealed class DutzAdMobConsent : MonoBehaviour
 
     public static bool CanRequestAds => ConsentInformation.CanRequestAds();
 
+    public static bool IsShowingPrivacyForm => instance != null && instance.showingPrivacyForm;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
     {

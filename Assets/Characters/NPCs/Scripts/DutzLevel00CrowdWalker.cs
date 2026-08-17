@@ -262,7 +262,7 @@ public static class DutzLevel00StaticCrowdColliders
 public class DutzLevel00PlayerCrowdPushback : MonoBehaviour
 {
     const float WalkerPushMeters = 0.1f;
-    const float CitizenChasePushMeters = 0.24f;
+    const float CitizenChasePushMeters = 0.24f * DutzLevel00CrossroadCitizenChaser.ChaserPushMultiplier;
     const float EdgePushBias = 0.7f;
 
     CharacterController cc;

@@ -498,11 +498,14 @@ public class DutzRobloxMobileInput : MonoBehaviour
 
     static Rect CenteredRect(Vector2 normalizedAnchor, float width, float height)
     {
+        var layoutWidth = GetHudLayoutWidth();
         var center = new Vector2(
-            Screen.width * normalizedAnchor.x,
+            layoutWidth * normalizedAnchor.x,
             Screen.height * normalizedAnchor.y);
         return new Rect(center.x - width * 0.5f, center.y - height * 0.5f, width, height);
     }
+
+    static float GetHudLayoutWidth() => DutzLandscapeBannerLayout.PlayableWidthPixels;
 
     Rect GetVerticalPadArrowRect(MoveArrow arrow)
     {
@@ -538,7 +541,7 @@ public class DutzRobloxMobileInput : MonoBehaviour
     {
         var cell = GetHorizontalPadCellSize();
         var rightCenter = new Vector2(
-            Screen.width * AnchorRight.x,
+            GetHudLayoutWidth() * AnchorRight.x,
             Screen.height * AnchorRight.y);
         // Hit circles use diameter = cell — keep a thin gap so rings never overlap.
         var centerGap = cell * (1f + HorizontalPadEdgeGapFraction);
@@ -560,7 +563,7 @@ public class DutzRobloxMobileInput : MonoBehaviour
     {
         // Track Right: same X, raised by LookAboveRight so LOOK moves when Right drops.
         return new Vector2(
-            Screen.width * AnchorRight.x,
+            GetHudLayoutWidth() * AnchorRight.x,
             Screen.height * (AnchorRight.y - LookAboveRight));
     }
 
@@ -654,7 +657,7 @@ public class DutzRobloxMobileInput : MonoBehaviour
         if (IsInsideAnyMovementPad(screenPos))
             return false;
 
-        return guiPos.x >= Screen.width * LookZoneStart;
+        return guiPos.x >= GetHudLayoutWidth() * LookZoneStart;
     }
 
     static Vector2 ToGuiPosition(Vector2 screenPos) =>

@@ -8,8 +8,12 @@ using UnityEngine;
 [DefaultExecutionOrder(-188)]
 public class DutzLevel00CrossroadCitizenChaser : MonoBehaviour
 {
-    public const float ChaseSpeed = 20f;
-    public const float ChaseAnimSpeed = 3.2f;
+    public static float ChaseSpeed => DutzDifficulty.GetCrossroadChaseSpeed();
+
+    public static float ChaseAnimSpeed => DutzDifficulty.GetCrossroadChaseAnimSpeed();
+    public const float ChaserScaleMultiplier = 2f;
+    public const float ChaserMassMultiplier = 2f;
+    public const float ChaserPushMultiplier = 2f;
     const float ChaseStopDistance = 0.45f;
 
     SimpleCitizensNpcPhysics npcPhysics;
@@ -25,7 +29,17 @@ public class DutzLevel00CrossroadCitizenChaser : MonoBehaviour
             return;
 
         StripCrowdWalkerComponents(duplicate);
+        ApplyChaserBulk(duplicate);
         EnsureOnCitizen(duplicate);
+    }
+
+    /// <summary>Crossroad chasers are fewer but bulkier — 2× scale/mass for stronger edge push.</summary>
+    public static void ApplyChaserBulk(GameObject duplicate)
+    {
+        if (duplicate == null || Mathf.Approximately(ChaserScaleMultiplier, 1f))
+            return;
+
+        duplicate.transform.localScale *= ChaserScaleMultiplier;
     }
 
     public static void EnsureOnCitizen(GameObject citizen)
@@ -41,7 +55,11 @@ public class DutzLevel00CrossroadCitizenChaser : MonoBehaviour
             physics = citizen.AddComponent<SimpleCitizensNpcPhysics>();
 
         physics.Apply();
-        physics.ConfigureForGroundChase(ChaseSpeed, ChaseAnimSpeed, ChaseStopDistance);
+        physics.ConfigureForGroundChase(
+            ChaseSpeed,
+            ChaseAnimSpeed,
+            ChaseStopDistance * ChaserScaleMultiplier);
+        physics.MultiplyMass(ChaserMassMultiplier);
         physics.SnapFeetToRoad();
 
         if (citizen.GetComponent<DutzLevel00CrossroadCitizenChaser>() == null)
@@ -86,7 +104,10 @@ public class DutzLevel00CrossroadCitizenChaser : MonoBehaviour
     {
         npcPhysics = GetComponent<SimpleCitizensNpcPhysics>();
         if (npcPhysics != null)
-            npcPhysics.ConfigureForGroundChase(ChaseSpeed, ChaseAnimSpeed, ChaseStopDistance);
+            npcPhysics.ConfigureForGroundChase(
+                ChaseSpeed,
+                ChaseAnimSpeed,
+                ChaseStopDistance * ChaserScaleMultiplier);
     }
 
     void Start()

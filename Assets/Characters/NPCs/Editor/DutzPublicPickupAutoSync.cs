@@ -153,6 +153,10 @@ public static class DutzPublicPickupAutoSync
         if (!scene.IsValid() || string.IsNullOrEmpty(scene.path))
             return;
 
+        // Level 00 is hand-authored (EDSA crowd, crossroad spawns, murals). Never auto-alter on open/recompile.
+        if (scene.path == Level00Path)
+            return;
+
         var changed = false;
 
         if (scene.path == Level00Path || scene.path == Level01Path || scene.path == Level02Path || scene.path == Level03Path)
