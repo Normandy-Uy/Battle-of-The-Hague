@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4eb96bcff90dd6947ae8b25af726b8b5, type: 3}
+  m_Name: DutzHighwayWallSlogans
+  m_EditorClassIdentifier: 
+  slogans:
+  - BUILD THE WALL
+  - MAKE ROADS GREAT AGAIN
+  - LAW AND ORDER
+  - FREEDOM FOR ALL
+  - VOTE OR DIE
+  - ONE NATION UNDER DUTZ
+  - NO RETREAT NO SURRENDER
+  - THE HIGHWAY BELONGS TO THE PEOPLE
+  - STRONG BORDERS STRONG ROADS
+  - FORWARD TOGETHER
+  - TRUTH ON THE CONCRETE
+  - POWER TO THE DRIVER
+  spacingAlongWall: 55
+  wallFaceInset: 0.1
+  heightOnWall: 0.55
+  verticalOffset: 2
+  wallSideExtent: 0.92
+  fontSize: 36
+  scaleFontFromWallHeight: 1
+  fontSizePerWallHeight: 1.15
+  fontColor: {r: 0.92, g: 0.78, b: 0.08, a: 1}
+  outlineColor: {r: 0.12, g: 0.05, b: 0.02, a: 1}
+  outlineWidth: 0.22
+  characterSpacing: 2

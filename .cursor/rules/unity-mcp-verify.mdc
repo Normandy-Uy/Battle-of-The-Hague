@@ -1,0 +1,19 @@
+---
+description: Always verify Unity changes via MCP before finishing
+alwaysApply: true
+---
+
+# Unity MCP verification (required)
+
+After any Unity code/scene/asset change for this project:
+
+1. **Recompile** — `recompile_scripts` via MCP; fix errors before continuing.
+2. **Auto-apply** — pickup FBX assets sync automatically via `DutzPublicPickupAutoSync` on editor load. Do **not** use `Tools/Dutz/...` menu items unless the user explicitly asks.
+3. **Console** — `get_console_logs` with `logType: error` (must be empty).
+4. **Scene** — `get_gameobject` on affected objects when MCP is connected and the scene is loaded.
+5. **Diagnose** — call `DutzGiantHippieBossFaceDiagnostics.DiagnoseFromMenu()` via batch/execute when touching boss face/hippie giant.
+6. **Save** — `save_scene` when scene state changed.
+
+If MCP is unavailable or Unity is not focused, tell the user to focus Unity and wait for recompile — do not fall back to Tools/Dutz menus.
+
+Do not tell the user work is done until MCP verification passes or you have confirmed assets/scenes are saved on disk.

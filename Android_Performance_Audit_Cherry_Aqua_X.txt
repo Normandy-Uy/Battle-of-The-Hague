@@ -1,0 +1,229 @@
+================================================================================
+ANDROID PERFORMANCE AUDIT — TARGET DEVICE
+Cherry Mobile Aqua X (from attached product listing)
+================================================================================
+Game: Battle of The Hague (Unity 2022.3.62f3, Built-in RP, IL2CPP)
+Audit date: 2026-07-26
+Mode: Device-specific estimate (no on-device Profiler capture)
+
+--------------------------------------------------------------------------------
+DEVICE UNDER TEST (FROM YOUR SCREENSHOTS + CROSS-CHECK)
+--------------------------------------------------------------------------------
+Brand / Model:          Cherry Mobile Aqua X
+Listing price shown:    ~₱1,499 – ₱1,600 (ultra-budget PH market)
+OS (listing):           Android 9 Pie (API 28)
+CPU (listing text):     2.0 GHz Octa-Core  /  one listing also prints "Helio P60"
+RAM (listing):          3 GB
+Storage (listing):      32 GB + microSD up to 128 GB
+Display (listing):      6.2" / 6.52" HD+ TrueView Teardrop (~720 x 1520–1600)
+Battery (listing):      2800 mAh  (note: most PH reviews list ~3500 mAh)
+Network:                Dual SIM Hybrid, LTE
+Cameras:                13 MP rear / 8 MP front
+
+CHIPSET CORRECTION (IMPORTANT):
+  Seller page text says "Mediatek Helio P60" on one screenshot.
+  Independent PH tech specs for Cherry Aqua X consistently list:
+    SoC:  MediaTek Helio P23 (MT6763)
+    CPU:  Octa-core Cortex-A53 (no A73 big cores)
+    GPU:  ARM Mali-G71 MP2
+  This audit uses Helio P23 + Mali-G71 MP2 as the realistic hardware.
+  If a unit truly had Helio P60 + Mali-G72 MP3, expect ~10–20% better FPS,
+  but RAM (3 GB) would still be the hard limit.
+
+DEVICE TIER:            Ultra-budget / entry-level (2017–era mid-low SoC, 2022 phone)
+
+
+================================================================================
+1. GENERAL — WILL THE GAME INSTALL?
+================================================================================
+Unity Min API:          24 (Android 7.0)     → Aqua X Android 9 = PASS
+Target API:             35                   → install still OK on API 28 device
+IL2CPP / ARM:           ARMv7 + ARM64        → PASS (Aqua X is 64-bit)
+Graphics API:           OpenGLES3 only       → PASS (P23 / Mali-G71 support GLES3)
+Vulkan:                 Not required         → N/A for this build
+APK size (Level07):     ~72.5 MB             → PASS if ~200+ MB free on 32 GB ROM
+Paid APK/AAB:           ~86 MB               → same storage caution
+
+INSTALLABLE?            YES (technically)
+RECOMMENDED TO SUPPORT? NO
+
+
+================================================================================
+2. GRAPHICS ON THIS DEVICE — GRADE F
+================================================================================
+Phone GPU:              Mali-G71 MP2 (very weak for Unity 2022 character scenes)
+Display load:           HD+ 720p helps (lower fill-rate than FHD)
+Game state on mobile:   Very Low quality, shadows OFF, mip limit 3–4, fog OFF
+
+Still fighting against:
+  - ~140 SkinnedMeshRenderers in Level07
+  - 0 LOD Groups
+  - 0 Occlusion Culling
+  - Built-in Forward, OpenGLES3, Multithreaded Rendering OFF
+  - Many unique skinned characters (7 hippie pool + giants + player)
+
+Expected GPU behavior on Aqua X:
+  - Heavy skinning + draw prep stalls
+  - Frequent frame spikes when giants / multiple hippies are on screen
+  - Thermal throttling within 5–15 minutes of play
+
+Graphics Grade for Aqua X:  F
+
+
+================================================================================
+3. LIGHTING ON THIS DEVICE — GRADE C (runtime)
+================================================================================
+Game already disables shadows on mobile and uses flat bright ambient.
+Realtime lights: 3 (1 directional + 2 point) — still costly on Mali-G71.
+No baked lightmaps shipped → GPU pays every frame.
+
+Lighting is NOT the main killer on Aqua X; skinned meshes + RAM are worse.
+Lighting Grade (Aqua X):  C
+
+
+================================================================================
+4. CPU ON THIS DEVICE — GRADE D
+================================================================================
+Helio P23 = all Cortex-A53 (efficiency cores only).
+Unity 2022.3 IL2CPP + animation + physics + IMGUI OnGUI + FindObjectOfType
+spam will saturate the little cores quickly.
+
+Expected CPU bottlenecks on Aqua X:
+  1. Animation / skinning jobs
+  2. Main-thread render prep (MT rendering disabled)
+  3. Scripts / AI Update + Find*
+  4. IMGUI mobile controls
+  5. Physics FixedUpdate on characters
+
+CPU Grade for Aqua X:  D
+
+
+================================================================================
+5. MEMORY ON THIS DEVICE — GRADE F  ★ HARD LIMIT ★
+================================================================================
+Device RAM:             3 GB total
+Android 9 + launcher + services typically leave ~1.4–1.8 GB for apps
+Estimated game peak:    ~1.1–1.8 GB Working Set (Level07 Very Low)
+
+Result:
+  - Frequent memory pressure
+  - Background app kills
+  - Possible sudden quit / "App isn't responding"
+  - Longer hitching when loading textures / respawning NPCs
+  - 32 GB ROM fills fast; installs OK only with free space
+
+Can 3 GB run it?
+  Barely / unstable — not a supported baseline.
+
+Memory Grade for Aqua X:  F
+
+
+================================================================================
+6. GAMEPLAY COMPLEXITY vs THIS PHONE — GRADE D
+================================================================================
+Game design is not huge (single-player highway, ~7 pooled enemies).
+But presentation cost (skinned citizens/giants) exceeds what Helio P23 + 3 GB
+can sustain.
+
+Play sessions: short highway runs may "work"; longer fights near giants will
+feel broken.
+
+
+================================================================================
+7. ESTIMATED PROFILER PROFILE ON AQUA X (NO CAPTURE)
+================================================================================
+Estimated frame-time share when "playable" frames happen:
+  Skinning / Anim:     ~30–35%
+  Render / CPU prep:   ~20–25%
+  Scripts / AI:        ~15–20%
+  IMGUI / HUD:         ~10–15%
+  Physics:             ~8–12%
+  GPU fill (720p):     ~8–12%
+
+Biggest bottlenecks on THIS phone:
+  1. RAM pressure / GC / texture residency
+  2. Skinned mesh count (no LOD)
+  3. Single-threaded render path
+  4. Weak Mali-G71 MP2 under character load
+
+
+================================================================================
+8. AQUA X SCORECARD (DEVICE-SPECIFIC)
+================================================================================
+Installable?                 YES
+Expected FPS (Level07):      12–22 average
+  Quiet road / few NPCs:     ~18–25
+  Combat / giants on screen: ~8–15 (stutters)
+  After thermal throttle:    ~8–14
+Recommended graphics:        Forced Very Low only (already what build does)
+  + prefer 30 FPS cap (already on <6 GB devices)
+  + consider extra 0.7–0.8 resolution scale if you add one
+Playability:                 MARGINAL / NOT RECOMMENDED
+Thermal throttling:          HIGH (small battery + weak SoC + sustained 3D)
+Battery consumption:         VERY HIGH
+  Listing battery 2800 mAh → expect ~45–90 min of gameplay before empty
+  (if unit is actually ~3500 mAh, maybe ~60–120 min)
+Storage:                     TIGHT on 32 GB — keep free space > 1 GB
+
+Device Performance Grade:    F
+Play Store support decision: EXCLUDE (do not list as supported)
+
+
+================================================================================
+9. GOOGLE PLAY / SUPPORT POLICY FOR THIS DEVICE
+================================================================================
+Suitable to advertise for Aqua X?     NO
+Android Go?                           Not Go, but same class of pain
+Min Android for your game (rec):      10+ preferred; Aqua X stuck on 9
+Min RAM for your game (rec):          4 GB  → Aqua X fails
+Min GPU for your game (rec):          Adreno 610 / Mali-G52+  → G71 MP2 fails
+Min CPU for your game (rec):          SD 680 / G85 class  → P23 fails
+
+Play console action:
+  - Exclude devices with < 4 GB RAM
+  - Optionally exclude Mali-G71 / Helio P23 generation
+  - Keep OpenGL ES 3.0 requirement
+
+
+================================================================================
+10. WHAT WOULD NEED TO CHANGE TO MAKE AQUA X "OK"
+================================================================================
+Even with heroic optimization, Aqua X is a stretch. Minimum to reach ~25–30 FPS:
+  1. Hard LOD + distance cull skinned meshes (show 1–2 hippies max on low RAM)
+  2. Replace multi-mesh SimpleCitizens with 1 skinned mesh or billboard far NPCs
+  3. Enable Multithreaded Rendering
+  4. Cap textures to 512 on Android low tier
+  5. Force 0.7 resolution scale when systemMemorySize < 3500
+  6. Bake lighting; pixelLightCount = 1
+  7. Replace OnGUI HUD with uGUI
+  8. ARM64-only + aggressive strip
+Without those, do not promise this phone.
+
+
+================================================================================
+11. FINAL VERDICT — CHERRY AQUA X
+================================================================================
+Installable:                 YES
+Playable product quality:    NO
+Expected FPS:                12–22 (drops to ~8–15 in action)
+Recommended graphics:        Very Low + 30 FPS (still not enough)
+Thermal:                     Severe throttling risk
+Battery:                     Poor for gaming
+Support recommendation:      DO NOT SUPPORT / DO NOT TARGET
+
+Minimum hardware vs Aqua X:
+  Needed:  Android 10+, 4 GB RAM, stronger GPU than Mali-G71 MP2
+  Aqua X:  Android 9, 3 GB RAM, Mali-G71 MP2  → BELOW MINIMUM
+
+SINGLE BIGGEST LIMITER ON THIS PHONE:
+  3 GB RAM + too many skinned meshes with no LOD.
+  The Helio P23 / Mali-G71 is secondary — even if the listing's "P60" were true,
+  3 GB RAM would still make Level07 unreliable.
+
+HONEST ONE-LINER:
+  The Cherry Aqua X can install the APK, but it is the wrong class of phone for
+  Battle of The Hague. Treat it as unsupported ultra-budget hardware.
+
+================================================================================
+END OF DEVICE AUDIT — CHERRY MOBILE AQUA X
+================================================================================

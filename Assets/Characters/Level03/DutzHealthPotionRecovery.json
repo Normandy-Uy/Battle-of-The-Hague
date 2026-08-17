@@ -1,0 +1,544 @@
+{
+  "potions": [
+    {
+      "name": "DutzHealthPotion_Seg01_01",
+      "position": {
+        "x": -989.65,
+        "y": 11.83,
+        "z": -6.74
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg01_02",
+      "position": {
+        "x": -940.96594,
+        "y": 12,
+        "z": -11
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg01_03",
+      "position": {
+        "x": -893.98,
+        "y": 12,
+        "z": -4.81
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg01_04",
+      "position": {
+        "x": -846.8256,
+        "y": 14,
+        "z": -4.5
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg01_05",
+      "position": {
+        "x": -784.14,
+        "y": 15.21,
+        "z": 2.76
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg02_01",
+      "position": {
+        "x": -676.3346,
+        "y": 15,
+        "z": -11
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg02_02",
+      "position": {
+        "x": -626.1832,
+        "y": 15,
+        "z": -4.5
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg02_03",
+      "position": {
+        "x": -588.7,
+        "y": 15,
+        "z": -6.3
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg02_04",
+      "position": {
+        "x": -550.9562,
+        "y": 15,
+        "z": -11
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg02_05",
+      "position": {
+        "x": -501,
+        "y": 17,
+        "z": -16.8
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg03_01",
+      "position": {
+        "x": -406.19998,
+        "y": 8,
+        "z": -4.5
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg03_02",
+      "position": {
+        "x": -356.3,
+        "y": 11,
+        "z": -4.6
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg03_03",
+      "position": {
+        "x": -318.6999,
+        "y": 11,
+        "z": -11
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg03_04",
+      "position": {
+        "x": -281.19986,
+        "y": 11,
+        "z": -4.5
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg03_05",
+      "position": {
+        "x": -231.27,
+        "y": 11,
+        "z": 2.72
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg04_01",
+      "position": {
+        "x": -130.5,
+        "y": 11,
+        "z": -11
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg04_02",
+      "position": {
+        "x": -68.6,
+        "y": 11,
+        "z": -7.14
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg04_03",
+      "position": {
+        "x": -22,
+        "y": 11,
+        "z": -4.5
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg04_04",
+      "position": {
+        "x": 24.41,
+        "y": 11,
+        "z": 1.15
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg04_05",
+      "position": {
+        "x": 86.500015,
+        "y": 12,
+        "z": -11
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg05_01",
+      "position": {
+        "x": 215.625,
+        "y": 12,
+        "z": -4.5
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg05_02",
+      "position": {
+        "x": 293.01,
+        "y": 12,
+        "z": -8.23
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg05_03",
+      "position": {
+        "x": 351.25,
+        "y": 12,
+        "z": -11
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg05_04",
+      "position": {
+        "x": 409.27,
+        "y": 12,
+        "z": -7.17
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg05_05",
+      "position": {
+        "x": 486.875,
+        "y": 12,
+        "z": -4.5
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg06_01",
+      "position": {
+        "x": 600,
+        "y": 6,
+        "z": -11.2
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg06_02",
+      "position": {
+        "x": 663.10004,
+        "y": 6,
+        "z": -11
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg06_03",
+      "position": {
+        "x": 700.56,
+        "y": 8,
+        "z": -9.15
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg06_04",
+      "position": {
+        "x": 737.9,
+        "y": 8,
+        "z": -9.4
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "name": "DutzHealthPotion_Seg06_05",
+      "position": {
+        "x": 788.1001,
+        "y": 8,
+        "z": -11
+      },
+      "eulerAngles": {
+        "x": 0,
+        "y": 90.50067245301332,
+        "z": 0
+      },
+      "localScale": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    }
+  ]
+}

@@ -1,0 +1,266 @@
+================================================================================
+BATTLE OF THE HAGUE — ANDROID PERFORMANCE AUDIT
+================================================================================
+Source: Unity project settings, Level07 scene YAML, mobile bootstrap scripts,
+APK on disk. No Unity Profiler capture was attached — FPS figures are engineering
+estimates under the game's forced Very Low mobile path.
+Date: 2026-07-26
+
+OVERALL GRADE: C−
+TARGET FPS (MOBILE): 30
+LEVEL07 APK: 72.5 MB
+MIN RECOMMENDED RAM: 4 GB
+
+BIGGEST LIMITER:
+Skinned character density without LODs or occlusion, on Built-in Forward +
+OpenGL ES 3 with multithreaded rendering disabled. Lighting is already
+shadowless on mobile — GPU cost is mostly fill-rate + skinning, not shadows.
+
+
+================================================================================
+1. GENERAL INFORMATION
+================================================================================
+Unity version:              2022.3.62f3 LTS
+Render pipeline:            Built-in (Forward) — no URP/HDRP package
+Android build target:       Android
+Scripting backend:          IL2CPP
+CPU architectures:          ARMv7 + ARM64 (AndroidTargetArchitectures = 3)
+Graphics API:               OpenGLES3 only (Vulkan not enabled)
+APK / AAB size:             Level07 72.5 MB · Paid ~86 MB
+Min API Level:              24 (Android 7.0+)
+Target API Level:           35
+Code stripping:             High + stripEngineCode
+MT rendering (Android):     DISABLED (major missed CPU win)
+
+
+================================================================================
+2. GRAPHICS ANALYSIS — GRADE D+
+================================================================================
+Level07 scene inventory (serialized):
+  GameObjects:              ~460
+  Prefab instances:         108
+  SkinnedMeshRenderers:     140
+  MeshRenderers:            27
+  LOD Groups:               0
+  Occlusion data:           None
+  Reflection probes:        0
+  Terrain:                  0
+  Particle systems:         0
+  Materials (project):      202
+  Custom shaders:           15
+
+Texture importer maxSize distribution:
+  256:    1
+  512:   49
+  1024:  55
+  2048: 152
+
+Notes:
+- Runtime mobile bootstrap applies globalTextureMipmapLimit 3–4 (helps, but
+  wastes disk/APK and first-load decode cost).
+- No LODs, no occlusion bake, almost no static flags.
+- StripUnusedMeshComponents is OFF.
+- Built-in RP without SRP Batcher.
+- Transparency is mostly UI/icons; world is opaque low-poly (that part is fine).
+
+
+================================================================================
+3. LIGHTING — GRADE B− (runtime) / D (authoring)
+================================================================================
+Realtime lights (Level07):  3 (1 Directional + 2 Point)
+Shadows on mobile:          Off
+Lightmap asset:             None
+Lightmapping mode:          All Realtime (m_Lightmapping: 4)
+Post-processing:            Not detected
+
+Mobile bootstrap forces:
+  Flat ambient, sun intensity 1.9, fog off, Quality shadows Disable.
+
+GPU impact estimate:
+  Lighting share ~10–20% on mid devices; skinning/fill dominate.
+  Authoring never shipped baked GI — wasted opportunity for free visuals
+  without runtime cost.
+
+
+================================================================================
+4. CPU PERFORMANCE — GRADE C
+================================================================================
+Update() sites:             36
+FixedUpdate():              17
+OnGUI():                    31
+Find* usages:               184
+
+Notes:
+- Single-player; no NavMesh agents in Level07.
+- Hippie AI is scripted chase/teleport pool (7 addicts).
+- Animation cost is high due to many skinned meshes.
+- Incremental GC is ON.
+- Object pooling exists for segment hippies, but Destroy is still common.
+- No DOTS/ECS.
+
+Expected bottlenecks:
+  Animation/skinning jobs, IMGUI, FindObjectOfType, physics FixedUpdate on
+  characters, main-thread rendering prep (MT rendering off).
+
+
+================================================================================
+5. MEMORY — GRADE C−
+================================================================================
+Device RAM     Can run?                Notes
+---------      --------                -----
+2 GB           No / crash-prone        Android Go + Unity 3D + 140 skinned meshes — OOM risk
+3 GB           Barely                  Expect 15–25 FPS, hitching, background kills
+4 GB           Yes (recommended min)   Playable at 30 FPS target with Very Low
+6 GB           Comfortable             Can aim 30–60 depending on SoC
+8 GB           Comfortable             Headroom; GPU usually limits before RAM
+
+Rough peak Working Set estimate (Level07 Very Low): ~1.1–1.8 GB
+Source textures on disk: ~64 MB
+Meshes on disk: ~37 MB
+Audio: negligible (~0.3 MB)
+GC pressure: medium (string / Find / IMGUI)
+
+
+================================================================================
+6. GAMEPLAY COMPLEXITY — GRADE B
+================================================================================
+- Linear highway levels
+- ~7 pooled enemies + stationary giants
+- No multiplayer / networking
+- Modest physics
+- No world streaming (full segment set loaded)
+- IMGUI HUD (not Canvas-heavy)
+- Complexity is moderate; cost comes from character presentation, not
+  simulation scale
+
+
+================================================================================
+7. UNITY PROFILER ANALYSIS (ESTIMATED — NO CAPTURE PROVIDED)
+================================================================================
+Attach a Unity Profiler or Android GPU Inspector session from Level07 gameplay
+to replace these percentages with measured numbers.
+
+Estimated frame-time share on mid-range Android (Very Low, 30 FPS target):
+  Skinning / Anim:   28%
+  Render / CPU:      22%
+  Scripts / AI:      18%
+  IMGUI / HUD:       12%
+  Physics:           10%
+  GPU fill:          10%
+
+Biggest bottlenecks (estimated):
+  1. Skinned mesh / animation
+  2. CPU render prep (MT rendering off)
+  3. Scripts / FindObjectOfType / AI
+  4. IMGUI OnGUI HUD
+
+
+================================================================================
+8. ANDROID COMPATIBILITY & DEVICE FPS
+================================================================================
+Phone                          Installable?   Expected FPS   Graphics              Playability        Thermal           Battery
+-----------------------------  -------------  -------------  --------------------  -----------------  ----------------  ----------------
+itel A50C (2 GB / T603)        Risky          8–18           Forced Very Low       Often unplayable   Severe            Very High
+itel A50 (2–3 GB / T603)       Yes*           12–22          Very Low + 30 FPS     Marginal           High              High
+Samsung A15 (4–6 GB)           Yes            24–35          Very Low / Low        Playable           Moderate          Moderate–High
+Samsung A16 (4–8 GB)           Yes            26–38          Very Low / Low        Playable           Moderate          Moderate
+Redmi Note 13 (6–8 GB)         Yes            30–45          Low                   Good               Mild–Moderate     Moderate
+Redmi Note 14 (6–8 GB)         Yes            32–48          Low                   Good               Mild              Moderate
+Poco M7 (mid-budget)           Yes            30–42          Low                   Good               Mild–Moderate     Moderate
+Poco X7 (upper mid)            Yes            45–55          Low / Medium          Smooth             Low               Low–Moderate
+Galaxy S24 (flagship)          Yes            55–60          Medium+               Very smooth        Low               Low
+
+* itel A50 2 GB variants may install but are not recommended.
+FPS assumes landscape, mobile bootstrap Very Low, shadows off, Level07 highway combat.
+
+
+================================================================================
+9. GOOGLE PLAY REQUIREMENTS
+================================================================================
+Suitable for Google Play:           Yes (with device filtering)
+Minimum Android recommended:        8.0 (API 26) for market reality; project allows 24
+Minimum RAM recommended:            4 GB
+Minimum GPU recommended:            Adreno 610 / Mali-G52 / similar
+Minimum CPU recommended:            Snapdragon 680 / Helio G85 class
+Android Go devices supported:       NO — reject via Play device catalog
+
+Store listing advice:
+- Declare OpenGL ES 3.0+
+- Exclude <3 GB RAM and Go edition devices
+- Prefer AAB with ARM64-only to cut download size
+- Current Target API 35 is Play-compliant
+
+
+================================================================================
+10. TOP 25 OPTIMIZATIONS (HIGHEST IMPACT FIRST)
+================================================================================
+ 1. CRITICAL   Add LOD Groups on all SimpleCitizens / giants (140 skinned meshes in Level07 with zero LODs)
+ 2. CRITICAL   Replace or reduce skinned mesh count — merge body parts, use GPU skinning limits, cull distant NPCs
+ 3. CRITICAL   Bake lightmaps for highways + set lights to Baked/Mixed (currently Realtime, LightingDataAsset = none)
+ 4. HIGH       Enable Multithreaded Rendering on Android (currently mobileMTRendering Android: 0)
+ 5. HIGH       Switch Graphics API to Vulkan first, OpenGLES3 fallback
+ 6. HIGH       Occlusion Culling bake for highway corridors
+ 7. HIGH       Cap Android texture max size to 512–1024 (152 assets still allow 2048)
+ 8. HIGH       Strip Unused Mesh Components + ARM64-only builds (drop ARMv7 to shrink APK/CPU path)
+ 9. HIGH       Replace IMGUI OnGUI mobile HUD with uGUI/UI Toolkit (31 OnGUI entry points)
+10. HIGH       Eliminate FindObjectOfType / GameObject.Find in hot paths (184 usages in NPC scripts)
+11. HIGH       Distance-based animator disable + SkinnedMeshRenderer.enabled cull beyond ~40–60 m
+12. MED–HIGH   Migrate Built-in RP → URP with Mobile Forward+/SRP Batcher
+13. MED–HIGH   Static batching / combine highway prop meshes; mark static geometry
+14. MEDIUM     GPU Instancing on repeated road/prop materials
+15. MEDIUM     Enable Graphics Jobs on Android
+16. MEDIUM     Object pooling for punch VFX / coins / respawns (170 Destroy call sites)
+17. MEDIUM     Lower pixelLightCount to 1 on mobile; keep point lights baked or off
+18. MEDIUM     Compress billboard/portrait PNGs aggressively (6 MB portraits in Resources)
+19. MEDIUM     Resolution scale 0.7–0.85 on devices with RAM < 4 GB
+20. MEDIUM     Audio: compress to Vorbis streaming; avoid decompress-on-load for large clips
+21. MEDIUM     Disable unused Unity modules / always-included shaders; keep fog/shader stripping tight
+22. LOW–MED    Set Android default Quality explicitly to Very Low/Low (PerPlatformDefaultQuality empty)
+23. LOW–MED    Async scene/additive load for far highway segments (world streaming)
+24. LOW        Reduce FixedUpdate physics bodies; use kinematic where possible (28 Rigidbodies in Level07)
+25. LOW        Texture mip streaming + async upload buffer tuning for hitch reduction
+
+
+================================================================================
+11. FINAL SCORECARD
+================================================================================
+Graphics Grade:                 D+
+CPU Grade:                      C
+GPU Grade:                      C+
+Memory Grade:                   C−
+Battery Efficiency:             D+
+Optimization Quality:           C
+Low-End Device Compatibility:   F
+Overall Game Performance Grade: C−
+
+
+================================================================================
+12. FINAL VERDICT
+================================================================================
+Suitability:
+  Android Go:          NO
+  Budget / 2–3 GB:     NO (unsupported)
+  Mid-range 4–6 GB:    YES — primary target
+  High-end:            YES — easy 60 FPS headroom after polish
+
+Minimum recommended hardware:
+  Android Version:     10+ (API 29), soft floor API 26
+  CPU:                 8× A55 @ ~2.0 GHz or better (SD 680 / G99 class)
+  GPU:                 Adreno 610 / Mali-G52 MC2+
+  RAM:                 4 GB (6 GB preferred)
+  Storage:             500 MB free (APK ~75–90 MB)
+  Target FPS:          30 on mid-range, 60 on 6 GB+ SoCs
+
+HONEST ASSESSMENT:
+The project is partially optimized for phones — Very Low quality forcing, shadow
+kill, mip limits, and hippie pooling are real wins — but it is not a well-optimized
+Android title yet. Authoring still ships a character-heavy Built-in scene with
+zero LODs, no occlusion, OpenGL-only, and main-thread rendering. That mismatch
+is why budget phones choke while flagships feel fine.
+
+SINGLE BIGGEST FACTOR LIMITING PERFORMANCE:
+Skinned NPC/giant mesh count without LOD or distance culling.
+
+================================================================================
+END OF AUDIT
+================================================================================

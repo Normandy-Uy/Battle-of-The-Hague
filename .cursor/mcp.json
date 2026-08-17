@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "mcp-unity": {
+      "command": "node",
+      "args": [
+        "Library/PackageCache/com.gamelovers.mcp-unity@a32e47d4ec/Server~/build/index.js"
+      ],
+      "cwd": "C:/Users/admin/Free Dutz 2025/New Unity Project",
+      "env": {
+        "UNITY_HOST": "localhost",
+        "UNITY_PORT": "8090",
+        "UNITY_REQUEST_TIMEOUT": "10000"
+      }
+    }
+  }
+}

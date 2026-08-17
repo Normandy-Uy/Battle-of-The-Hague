@@ -1,0 +1,19 @@
+# Unity WebGL on OVH / Apache (psr.ovh)
+# Copy this file to the web root as ".htaccess" next to index.html
+
+AddType application/wasm .wasm
+AddType application/javascript .js
+AddType application/octet-stream .data
+AddType application/octet-stream .unityweb
+
+AddEncoding br .br
+AddType application/wasm .wasm.br
+AddType application/javascript .js.br
+AddType application/octet-stream .data.br
+AddType application/octet-stream .unityweb.br
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(wasm|data|unityweb|js)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>

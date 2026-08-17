@@ -1,0 +1,52 @@
+Battle of The Hague — WebGL Level 00 demo (psr.ovh/play/)
+============================================================
+
+AUTOMATED DEPLOY (recommended)
+------------------------------
+From project root in PowerShell:
+
+  .\deploy-1\deploy.ps1
+
+This uploads Builds/WebGL/ to the VPS and patches nginx.
+Share link: https://psr.ovh/play/
+
+Optional: copy deploy-1/config.env.example to deploy-1/config.env to change host/path.
+
+BUILD (Unity Editor)
+--------------------
+1. Tools > Dutz > WebGL > Prepare Level 00 Demo Build
+2. Tools > Dutz > WebGL > Build Level 00 WebGL
+3. Output: Builds/WebGL/ (index.html, Build/, TemplateData/)
+
+SERVER (already configured on your VPS)
+---------------------------------------
+Host:     ubuntu@15.235.206.171
+Web root: /var/www/psr          (existing Expo site — unchanged)
+WebGL:    /var/www/psr/play/    (Unity demo)
+SSL:      Let's Encrypt on psr.ovh (already active)
+Web server: nginx (NOT Apache — .htaccess is ignored)
+
+MANUAL DEPLOY (if deploy.ps1 fails)
+------------------------------------
+  ssh ubuntu@15.235.206.171 "mkdir -p /var/www/psr/play"
+  scp -r "Builds/WebGL/*" ubuntu@15.235.206.171:/var/www/psr/play/
+  scp deploy-1/remote-setup.sh ubuntu@15.235.206.171:~/
+  scp deploy-1/nginx-play.snippet ubuntu@15.235.206.171:~/deploy-1-nginx-play.snippet
+  ssh ubuntu@15.235.206.171 "bash ~/deploy-1-remote-setup.sh"
+
+TEST
+----
+1. Open https://psr.ovh/play/
+2. Wait for Unity loading bar
+3. Desktop: WASD, RMB+mouse look, Space jump, Shift run
+4. F12 Console: no MIME errors on .wasm
+
+TROUBLESHOOT
+------------
+- Blank page: check nginx mime.types has application/wasm
+- 404 on Build/*.wasm: confirm files under /var/www/psr/play/Build/
+- Re-deploy: run .\deploy-1\deploy.ps1 again (backs up old /play on server)
+
+ANDROID APK (unchanged)
+-----------------------
+WebGL does not replace Android builds. Use DutzAndroidBuildPrepare for APK.

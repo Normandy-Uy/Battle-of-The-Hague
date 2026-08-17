@@ -1,0 +1,12 @@
+# DEPLOY-1: nginx snippet for psr.ovh/play/ (Unity WebGL)
+# Install via deploy-1/remote-setup.sh or paste into /etc/nginx/sites-enabled/psr
+# before the existing "location /" block.
+
+    # DEPLOY-1: Unity WebGL demo at https://psr.ovh/play/
+    location /play/ {
+        alias /var/www/psr/play/;
+        try_files $uri $uri/ =404;
+    }
+
+# Also ensure /etc/nginx/mime.types includes:
+#     application/wasm                         wasm;

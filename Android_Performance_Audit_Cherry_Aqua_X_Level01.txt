@@ -1,0 +1,232 @@
+================================================================================
+ANDROID PERFORMANCE AUDIT — CHERRY AQUA X × LEVEL01 ONLY
+================================================================================
+Game level under test:  Dutz_Level01 ONLY (not Level07 / full game)
+Device:                 Cherry Mobile Aqua X (from your product screenshots)
+Engine build profile:   Unity 2022.3.62f3 · Built-in Forward · IL2CPP · OpenGLES3
+Audit date:             2026-07-26
+Method:                 Scene inventory + mobile bootstrap + device hardware estimate
+                        (no on-device Profiler capture)
+
+--------------------------------------------------------------------------------
+DEVICE (FROM YOUR LISTING + CROSS-CHECK)
+--------------------------------------------------------------------------------
+Model:                  Cherry Mobile Aqua X
+OS:                     Android 9 Pie (API 28)
+RAM / ROM:              3 GB / 32 GB (+ microSD ≤128 GB)
+CPU (listing):          2.0 GHz Octa-Core; one ad also prints "Helio P60"
+Realistic SoC:          MediaTek Helio P23 + Mali-G71 MP2 (PH tech reviews)
+Display:                HD+ ~720×1520–1600 (helps fill-rate)
+Battery (listing):      2800 mAh (reviews often cite ~3500 mAh)
+Price class:            Ultra-budget (~₱1,499–1,600)
+
+
+================================================================================
+LEVEL01 vs LEVEL07 — MEASURED SCENE LOAD
+================================================================================
+Metric                    Level01          Level07          Delta
+------------------------  ---------------  ---------------  --------------
+GameObjects               191              460              L01 ~2.4× lighter
+Prefab instances          54               108              L01 ~2× lighter
+SkinnedMeshRenderers      56               140              L01 ~2.5× lighter ★
+MeshRenderers             17               27               lighter
+Lights                    2                3                similar
+Animators                 4                10               lighter
+Rigidbodies               7                28               L01 ~4× lighter ★
+LOD Groups                0                0                same (bad)
+Occlusion data            none             none             same (bad)
+Reflection probes         0                0                same
+Terrain / particles       0 / 0            0 / 0            same
+Lightmapping              Realtime only    Realtime only    same
+LightingDataAsset         none             none             same
+Scene file size           ~0.6 MB          ~1.3 MB          lighter
+Root objects (Editor)     28               32               similar
+
+Level01 content notes:
+  - Segment hippie pool still present (7 hippies + teleport manager)
+  - Shop/stationary grandma giants (SC_Grandma / Gong Bong shop lock) — less chase load than L07 bosses
+  - Same highway structure, fewer total character meshes & physics bodies
+  - Mobile bootstrap still forces Very Low, shadows OFF, mip limit 4 on <4.5 GB RAM, 30 FPS cap
+
+
+================================================================================
+1. GENERAL — INSTALL ON AQUA X FOR LEVEL01?
+================================================================================
+Min API 24 vs Android 9:        PASS
+OpenGLES3:                      PASS
+IL2CPP ARM:                     PASS
+Level01-only APK size:          Not currently built as L01-only;
+                                full Level07 APK ≈72.5 MB; Paid ≈86 MB
+                                A Level01-only build would be similar order
+                                (shared assets dominate), still OK if free space
+
+INSTALLABLE?                    YES
+WORTH SUPPORTING FOR L01?       STILL NO (borderline better than L07)
+
+
+================================================================================
+2. GRAPHICS (LEVEL01 ON AQUA X) — GRADE D−
+================================================================================
+Better than Level07 because skinned meshes drop 140 → 56.
+Still:
+  - Zero LODs
+  - Zero occlusion
+  - Built-in Forward + GLES3 + MT rendering OFF
+  - 7 skinned hippies active in pool + shop giants + player
+
+GPU (Mali-G71 MP2) at 720p with Very Low / no shadows:
+  Manageable in quiet stretches; spikes when multiple skinned characters visible.
+
+Graphics Grade (L01 × Aqua X):  D−
+(was F on Level07)
+
+
+================================================================================
+3. LIGHTING (LEVEL01 ON AQUA X) — GRADE C
+================================================================================
+Lights in Level01: 2 realtime (1 Directional intensity 1.9, 1 Point 3.5)
+Shadows: off in scene + forced off on mobile
+No baked lightmaps
+
+Same lighting pattern as L07, slightly fewer lights.
+Not the main limiter.
+
+Lighting Grade:  C
+
+
+================================================================================
+4. CPU (LEVEL01 ON AQUA X) — GRADE D+
+================================================================================
+Helio P23 = all A53 cores.
+Level01 helps: fewer animators (4 vs 10), fewer rigidbodies (7 vs 28),
+fewer skinned meshes to update.
+
+Still paying for:
+  - Segment hippie AI / teleport manager
+  - IMGUI mobile HUD (OnGUI)
+  - FindObjectOfType patterns
+  - Main-thread render prep (MT rendering disabled)
+
+CPU Grade (L01 × Aqua X):  D+
+(was D on Level07)
+
+
+================================================================================
+5. MEMORY (LEVEL01 ON AQUA X) — GRADE D  ★ STILL THE HARD LIMIT ★
+================================================================================
+Device usable RAM after Android 9: often ~1.4–1.8 GB for apps
+Estimated Level01 peak Working Set (Very Low):  ~0.9–1.4 GB
+(Level07 estimate was ~1.1–1.8 GB)
+
+Level01 is safer than Level07 but 3 GB total is still tight:
+  - Background kills still possible
+  - Texture residency hitching remains
+  - Not a clean “supported” floor
+
+Memory Grade (L01 × Aqua X):  D
+(was F on Level07)
+
+
+================================================================================
+6. GAMEPLAY COMPLEXITY (LEVEL01) — GRADE C
+================================================================================
+- Single-player highway
+- 7 pooled segment hippies (teleport across segments — more manager work than L07’s Straight-2 lock)
+- Shop giants mostly stationary (less chase CPU than L07 bosses)
+- Light physics (7 rigidbodies)
+- Full highway loaded (no streaming)
+
+Complexity is moderate; presentation cost still high for this SoC.
+
+
+================================================================================
+7. ESTIMATED FRAME MIX — LEVEL01 ON AQUA X
+================================================================================
+Skinning / Anim:      ~25–30%
+Render / CPU prep:    ~20–25%
+Scripts / AI:         ~15–20%
+IMGUI / HUD:          ~10–15%
+Physics:              ~5–10%
+GPU fill (720p):      ~8–12%
+
+Biggest bottlenecks on Aqua X @ Level01:
+  1. 3 GB RAM pressure
+  2. Skinned meshes without LOD (56 is better, still too many for G71)
+  3. Single-threaded rendering
+  4. Weak Mali-G71 MP2 during multi-character views
+
+
+================================================================================
+8. AQUA X × LEVEL01 SCORECARD
+================================================================================
+Installable?                    YES
+Expected FPS (Level01):         18–28 average
+  Quiet road / few NPCs:        ~24–30 (near the 30 FPS cap)
+  Near hippie pack / giants:    ~14–22
+  After thermal throttle:       ~12–18
+Expected FPS (Level07 compare): 12–22 avg (worse)
+
+Recommended graphics:           Forced Very Low + 30 FPS (already applied)
+Playability:                    MARGINAL — short sessions possible; not product-quality
+Thermal throttling:             HIGH (better than L07, still bad)
+Battery:                        VERY HIGH drain on 2800–3500 mAh
+Storage (32 GB):                TIGHT — keep >1 GB free
+
+Device × Level01 Grade:         D
+Support recommendation:         DO NOT SUPPORT as a target device
+                                (better than L07, still below 4 GB / mid-GPU floor)
+
+
+================================================================================
+9. GOOGLE PLAY — LEVEL01 PRODUCT ON AQUA X
+================================================================================
+Advertise Level01 for Aqua X?   NO
+Android 9 OK for min API 24?    Technically yes
+Meets min RAM 4 GB?             NO (3 GB)
+Meets min GPU class?            NO (Mali-G71 MP2 below Adreno 610 / G52)
+
+If you ship a Level01 sample APK anyway:
+  - Soft-warn low RAM; do not promise smooth play
+  - Keep Very Low + 30 FPS + aggressive mip limit
+  - Prefer excluding <4 GB in Play device catalog
+
+
+================================================================================
+10. LEVEL01-SPECIFIC OPTIMIZATIONS THAT HELP AQUA X MOST
+================================================================================
+ 1. Distance-cull / hide skinned hippies beyond ~40 m; keep ≤2–3 active
+ 2. LOD or single-mesh swap for SimpleCitizens on Level01
+ 3. Enable Multithreaded Rendering
+ 4. Force resolution scale 0.7 when systemMemorySize < 3500
+ 5. pixelLightCount = 1; bake the 2 lights
+ 6. Replace OnGUI controls with uGUI
+ 7. Cap Android textures to 512 for low-RAM path
+Even then, treat Aqua X as “best effort,” not supported.
+
+
+================================================================================
+11. FINAL VERDICT — AQUA X ON LEVEL01 ONLY
+================================================================================
+Compared with Level07 on the same phone:
+  Level01 is meaningfully lighter (~2.5× fewer skinned meshes, ~4× fewer rigidbodies)
+  Expected FPS rises from ~12–22 to ~18–28
+  Playability moves from “often unplayable” to “marginal / short sessions”
+
+Still:
+  Installable:                 YES
+  Product-quality playable:    NO
+  Expected FPS:                18–28 (drops to ~14–22 in action)
+  Recommended graphics:        Very Low + 30 FPS only
+  Minimum hardware met?:       NO (needs 4 GB RAM + stronger GPU)
+
+SINGLE BIGGEST LIMITER ON LEVEL01 × AQUA X:
+  3 GB RAM + skinned NPC meshes with no LOD
+  (Level01 reduces the pain vs Level07, but does not clear the bar)
+
+ONE-LINER:
+  Level01 on Cherry Aqua X is easier than Level07, but still below the
+  recommended floor — expect mid-20s FPS at best, not a supported target.
+
+================================================================================
+END OF AUDIT — CHERRY AQUA X × DUTZ_LEVEL01 ONLY
+================================================================================
