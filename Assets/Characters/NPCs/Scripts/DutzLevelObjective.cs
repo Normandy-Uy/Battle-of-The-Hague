@@ -45,7 +45,6 @@ public class DutzLevelObjective : MonoBehaviour
     bool scoreRollComplete;
     bool showingLevelCompleteChoice;
     bool level00TransitionStarted;
-    bool level02TransitionStarted;
     bool level03TransitionStarted;
     bool level03VictoryVideoStarted;
 
@@ -107,7 +106,6 @@ public class DutzLevelObjective : MonoBehaviour
     bool IsTransitionVideoActiveOrPending() =>
         DutzVictoryVideoPlayback.IsPlaying
         || level00TransitionStarted
-        || level02TransitionStarted
         || level03TransitionStarted;
 
     public static bool ShouldShowLevelCompleteDialog()
@@ -165,7 +163,7 @@ public class DutzLevelObjective : MonoBehaviour
 
     public static void LoadLevel2FromDialog()
     {
-        DutzSeniorCitizenNextLevelGate.ProceedToNextLevel(() => Active?.PlayLevel2WithTransitionVideo());
+        DutzSeniorCitizenNextLevelGate.ProceedToNextLevel(() => Active?.PlayLevel2());
     }
 
     public static void LoadLevel3FromDialog()
@@ -1042,19 +1040,6 @@ public class DutzLevelObjective : MonoBehaviour
 
     public void PlayLevel2WithTransitionVideo()
     {
-        if (level02TransitionStarted)
-            return;
-
-        level02TransitionStarted = true;
-        showingLevelCompleteChoice = false;
-        statusMessage = string.Empty;
-        DutzVictoryVideoPlayback.BeginTransitionOverlaySuppression();
-        StartCoroutine(PlayLevel2AfterTransitionVideo());
-    }
-
-    IEnumerator PlayLevel2AfterTransitionVideo()
-    {
-        yield return DutzLevel01VictoryVideo.Play();
         PlayLevel2();
     }
 

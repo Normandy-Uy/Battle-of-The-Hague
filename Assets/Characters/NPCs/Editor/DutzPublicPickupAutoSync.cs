@@ -43,6 +43,10 @@ public static class DutzPublicPickupAutoSync
             if (!scene.IsValid() || string.IsNullOrEmpty(scene.path))
                 return;
 
+            // EDSA is hand-authored. Never reparent/rebuild on script reload.
+            if (scene.path == Level00Path)
+                return;
+
             TrySnapLevel03TrackGiantsInOpenScene(scene);
 
             if (pickupSyncScenePath == scene.path)
@@ -88,6 +92,9 @@ public static class DutzPublicPickupAutoSync
             return;
 
         if (DutzHighwayPhotoBillboardPlacer.ShouldSkipSceneOpenedHandler)
+            return;
+
+        if (scene.path == Level00Path)
             return;
 
         pickupSyncScenePath = null;
@@ -159,7 +166,7 @@ public static class DutzPublicPickupAutoSync
 
         var changed = false;
 
-        if (scene.path == Level00Path || scene.path == Level01Path || scene.path == Level02Path || scene.path == Level03Path)
+        if (scene.path == Level01Path || scene.path == Level02Path || scene.path == Level03Path)
         {
             changed |= DutzSceneMissingScriptRepair.RepairOpenLevelScene(scene, log: log);
             changed |= UpgradeForceFieldSuitInScene(log);
@@ -168,27 +175,14 @@ public static class DutzPublicPickupAutoSync
         if (scene.path == Level02Path)
             changed |= EnsureLevel02EndGoalContent(log);
 
-        if (scene.path == Level00Path || scene.path == Level03Path)
+        if (scene.path == Level03Path)
         {
             changed |= UpgradeLevel03HealthPotionsInScene(log);
             changed |= UpgradeSuperPunchInScene(log);
-        }
-
-        if (scene.path == Level03Path)
             changed |= DutzLevel03Setup.EnsureTrackGiantsSnappedOnOpenScene(log);
-
-        if (scene.path == Level00Path)
-        {
-            changed |= UpgradeSuperJumpInScene(log);
-            if (DutzLevel00EdsaMuralBuilder.NeedsTextureResync())
-                changed |= DutzLevel00EdsaMuralBuilder.ResyncTextures(log, force: false) > 0;
-            changed |= DutzLevel00CrowdWalkerPlacer.EnsureOnOpenScene(log);
-            changed |= DutzLevel00CrowdCitizensPlacer.EnsureOnOpenScene(log);
-            changed |= DutzLevel00CrossroadChaseSpawnsPlacer.EnsureOnOpenScene(log);
-            changed |= DutzLevel00RallyPlacardPlacer.EnsureOnOpenScene(log);
-            changed |= DutzLevel00StaticCrowdColliders.EnsureInOpenScene(log);
         }
-        else if (scene.path == Level07Path)
+
+        if (scene.path == Level07Path)
         {
             // Super Jump / Force Field Suit: never auto-reposition or force scale —
             // authored scene transforms must stick after Save.
@@ -204,16 +198,6 @@ public static class DutzPublicPickupAutoSync
             return;
 
         EditorSceneManager.MarkSceneDirty(scene);
-
-        // Level 00 has heavy manual hierarchy work (crossroad spawns, murals, crowd).
-        // Never silently SaveScene here — script recompiles were overwriting author edits on disk.
-        if (scene.path == Level00Path)
-        {
-            if (log)
-                Debug.Log("[Dutz] Level 00 pickup sync applied — review Hierarchy and save with Ctrl+S when ready.");
-            return;
-        }
-
         EditorSceneManager.SaveScene(scene);
 
         if (log)

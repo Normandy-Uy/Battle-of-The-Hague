@@ -42,14 +42,18 @@ public static class DutzLevel00EdsaMuralPlacer
 
     public static bool EnsureOnOpenScene(bool log)
     {
+        // Never auto-rebuild. PlaceOnLevel00 destroys HighwayPhotoMurals and recreates panels.
         var scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || scene.path != Level00ScenePath)
             return false;
 
-        if (!NeedsEdsaMuralsRepublish())
-            return false;
+        if (log && NeedsEdsaMuralsRepublish())
+        {
+            Debug.LogWarning(
+                "[Dutz] EDSA murals look incomplete. Use Assets/Dutz Authoring/Rebuild Level 00 EDSA Highway Murals only if you intend to wipe HighwayPhotoMurals.");
+        }
 
-        return PlaceOnLevel00(log);
+        return false;
     }
 
     public static bool PlaceOnLevel00(bool log)

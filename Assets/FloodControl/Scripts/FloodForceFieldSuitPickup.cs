@@ -67,42 +67,8 @@ public sealed class FloodForceFieldSuitPickup : MonoBehaviour
         collected = true;
         health.ActivateShield(shieldDurationSeconds);
         DutzPowerupPickupSounds.Play(DutzPowerupPickupSounds.Kind.ForceFieldSuit);
-        CreateShieldVisual(health.transform, shieldDurationSeconds);
+        FloodForceFieldVisual.SpawnOnPlayer(health.transform, shieldDurationSeconds, permanent: false);
         gameObject.SetActive(false);
-    }
-
-    static void CreateShieldVisual(Transform player, float duration)
-    {
-        if (player == null)
-            return;
-
-        Transform existing = player.Find("FloodForceFieldVisual");
-        if (existing != null)
-            Destroy(existing.gameObject);
-
-        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        sphere.name = "FloodForceFieldVisual";
-        sphere.transform.SetParent(player, false);
-        sphere.transform.localPosition = new Vector3(0f, 1f, 0f);
-        sphere.transform.localScale = Vector3.one * 2.4f;
-
-        Collider collider = sphere.GetComponent<Collider>();
-        if (collider != null)
-            Destroy(collider);
-
-        Shader shader = Shader.Find("Sprites/Default");
-        Material material = new Material(shader);
-        material.color = new Color(0.35f, 0.85f, 1f, 0.24f);
-
-        MeshRenderer renderer = sphere.GetComponent<MeshRenderer>();
-        renderer.sharedMaterial = material;
-        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        renderer.receiveShadows = false;
-        renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
-        renderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
-
-        FloodForceFieldVisual effect = sphere.AddComponent<FloodForceFieldVisual>();
-        effect.Configure(duration, material);
     }
 
     void OnValidate()
@@ -117,10 +83,71 @@ public sealed class FloodForceFieldSuitPickup : MonoBehaviour
 /// <summary>Lightweight pulse and lifetime for the Flood force-field bubble.</summary>
 public sealed class FloodForceFieldVisual : MonoBehaviour
 {
+    public const string VisualName = "FloodForceFieldVisual";
+
+    // Player is 2× with a 2-unit capsule; swimming pitch + outstretched arms
+    // poke out of the old 2.4 bubble. 4.6 covers the full silhouette.
+    const float ShieldLocalDiameter = 4.6f;
+    static readonly Color ShieldColor = new Color(0.35f, 0.85f, 1f, 0.22f);
+
     float expiresAt;
     bool permanent;
     Vector3 baseScale;
     Material runtimeMaterial;
+
+    public static void SpawnOnPlayer(Transform player, float duration, bool permanent)
+    {
+        if (player == null)
+            return;
+
+        Transform existing = player.Find(VisualName);
+        if (existing != null)
+            Object.Destroy(existing.gameObject);
+
+        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        sphere.name = VisualName;
+        sphere.transform.SetParent(player, false);
+        FitToPlayer(sphere.transform, player);
+
+        Collider collider = sphere.GetComponent<Collider>();
+        if (collider != null)
+            Object.Destroy(collider);
+
+        Material material = new Material(Shader.Find("Sprites/Default"));
+        material.color = ShieldColor;
+
+        MeshRenderer renderer = sphere.GetComponent<MeshRenderer>();
+        renderer.sharedMaterial = material;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+        renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+        renderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
+
+        FloodForceFieldVisual effect = sphere.AddComponent<FloodForceFieldVisual>();
+        if (permanent)
+            effect.ConfigurePermanent(material);
+        else
+            effect.Configure(duration, material);
+    }
+
+    public static void FitToPlayer(Transform sphere, Transform player)
+    {
+        if (sphere == null || player == null)
+            return;
+
+        Vector3 center = new Vector3(0f, 1f, 0f);
+        CapsuleCollider capsule = player.GetComponent<CapsuleCollider>();
+        if (capsule != null)
+            center = capsule.center;
+
+        sphere.localPosition = center;
+        sphere.localScale = Vector3.one * ShieldLocalDiameter;
+    }
+
+    public void CaptureBaseScale()
+    {
+        baseScale = transform.localScale;
+    }
 
     public void Configure(float duration, Material material)
     {

@@ -94,6 +94,12 @@ public class DutzForceField : MonoBehaviour
         player.GetComponent<DutzForceField>()?.Deactivate();
     }
 
+    /// <summary>Re-attaches the bubble after mid-life respawn without clearing the timer.</summary>
+    public static void RefreshForPlayer(DutzPlayerController player)
+    {
+        FindForPlayer(player)?.RefreshForActivePlayer();
+    }
+
     /// <summary>Ensures the suit hosts the field and strips any leftover Player1 instance.</summary>
     public static DutzForceField EnsureOnSuit(GameObject suit)
     {
@@ -288,6 +294,16 @@ public class DutzForceField : MonoBehaviour
         shieldedPlayer = null;
     }
 
+    public void RefreshForActivePlayer()
+    {
+        if (!active || shieldedPlayer == null)
+            return;
+
+        EnsureVisual();
+        AttachVisualToPlayer(shieldedPlayer);
+        SetVisualActive(true);
+    }
+
     void AttachVisualToPlayer(DutzPlayerController player)
     {
         if (visualRoot == null || player == null)
@@ -315,18 +331,23 @@ public class DutzForceField : MonoBehaviour
 
     void OnGUI()
     {
-        if (Time.time < expiredFlashUntil)
+        var startMessageUp = DutzLevelObjective.IsStartMessageActive;
+
+        if (!startMessageUp && Time.time < expiredFlashUntil)
             DutzAnnouncementHud.DrawFlash("FORCE FIELD EXPIRED", new Color(0.95f, 0.55f, 0.2f));
 
         if (!active)
             return;
 
-        if (Time.time < collectedFlashUntil)
-            DutzAnnouncementHud.DrawFlash("FORCE FIELD SUIT COLLECTED!", new Color(0.35f, 1f, 0.55f));
-        else if (Time.time < activeFlashUntil)
-            DutzAnnouncementHud.DrawFlash(
-                permanent ? "Force Field active — UNLIMITED!" : $"Force Field active — {DurationSeconds:F0}s!",
-                new Color(0.4f, 0.9f, 1f));
+        if (!startMessageUp)
+        {
+            if (Time.time < collectedFlashUntil)
+                DutzAnnouncementHud.DrawFlash("FORCE FIELD SUIT COLLECTED!", new Color(0.35f, 1f, 0.55f));
+            else if (Time.time < activeFlashUntil)
+                DutzAnnouncementHud.DrawFlash(
+                    permanent ? "Force Field active — UNLIMITED!" : $"Force Field active — {DurationSeconds:F0}s!",
+                    new Color(0.4f, 0.9f, 1f));
+        }
 
         DrawDurationHud();
     }

@@ -74,9 +74,8 @@ public static class DutzLevel00SceneRepair
                 : DutzLevel00TimelineMuralPlacer.EnsureOnOpenScene(log);
         }
 
-        changed |= force
-            ? DutzLevel00EdsaMuralPlacer.PlaceOnLevel00(log)
-            : DutzLevel00EdsaMuralPlacer.EnsureOnOpenScene(log);
+        if (GameObject.Find(DutzLevel00EdsaMuralPlacer.RootName) == null)
+            changed |= DutzLevel00EdsaMuralPlacer.PlaceOnLevel00(log);
 
         if (force || GameObject.Find(DutzLevel00DuterHagueMuralPlacer.RootName) == null)
         {

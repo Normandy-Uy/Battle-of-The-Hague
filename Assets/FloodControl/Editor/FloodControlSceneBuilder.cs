@@ -2501,6 +2501,8 @@ public static class FloodControlSceneBuilder
         SerializedObject healthSo = new SerializedObject(health);
         healthSo.FindProperty("maxHitPoints").intValue = 100;
         healthSo.FindProperty("currentHitPoints").intValue = 100;
+        healthSo.FindProperty("maxLives").intValue = 6;
+        healthSo.FindProperty("currentLives").intValue = 6;
         healthSo.FindProperty("gameManager").objectReferenceValue = manager;
         healthSo.ApplyModifiedPropertiesWithoutUndo();
     }
@@ -2885,6 +2887,8 @@ public static class FloodControlSceneBuilder
         SerializedObject healthSo = new SerializedObject(health);
         healthSo.FindProperty("maxHitPoints").intValue = 100;
         healthSo.FindProperty("currentHitPoints").intValue = 100;
+        healthSo.FindProperty("maxLives").intValue = 6;
+        healthSo.FindProperty("currentLives").intValue = 6;
         healthSo.FindProperty("gameManager").objectReferenceValue = manager;
         healthSo.ApplyModifiedPropertiesWithoutUndo();
 

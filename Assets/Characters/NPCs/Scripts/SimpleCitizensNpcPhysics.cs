@@ -73,6 +73,12 @@ public class SimpleCitizensNpcPhysics : MonoBehaviour
             return;
         }
 
+        if (DutzCollectibleProgress.UsesLevel03GiantRoadFooting(gameObject.name))
+        {
+            SnapFeetToRoad();
+            return;
+        }
+
         if (followGround && snapToGroundOnStart && !ShouldPreserveJonremEscortScenePose(gameObject)
             && !ShouldPreserveCrowdWalkerPose(gameObject))
             SnapFeetToRoad();
@@ -849,10 +855,17 @@ public class SimpleCitizensNpcPhysics : MonoBehaviour
             return;
 
         var feetY = DutzNpcFeet.GetLowestWorldY(gameObject);
+        var pivotToFeet = DutzNpcFeet.GetPivotToFeetOffset(gameObject);
+        if (DutzCollectibleProgress.UsesLevel03GiantRoadFooting(gameObject.name)
+            && DutzRoadGround.TrySampleLevel03GiantLandingDeck(segName, worldPosition, bodyCollider, out var landingY))
+        {
+            worldPosition.y = landingY + pivotToFeet;
+            return;
+        }
+
         if (!DutzRoadGround.TrySampleGiantRoadDeckY(worldPosition, feetY, bodyCollider, out var deckY))
             return;
 
-        var pivotToFeet = DutzNpcFeet.GetPivotToFeetOffset(gameObject);
         worldPosition.y = deckY + pivotToFeet;
     }
 
@@ -893,7 +906,8 @@ public class SimpleCitizensNpcPhysics : MonoBehaviour
     {
         Apply();
 
-        if (!followGround)
+        var level03RoadGiant = DutzCollectibleProgress.UsesLevel03GiantRoadFooting(gameObject.name);
+        if (!followGround && !level03RoadGiant)
             return;
 
         if (DutzGiantBossNames.IsJonremEscort(gameObject.name) && DutzCollectibleProgress.IsLevel01)

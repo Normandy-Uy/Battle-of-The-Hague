@@ -707,11 +707,12 @@ public static class DutzSenateBuildingMuralPlacer
 }
 
 /// <summary>
-/// Syncs public/ROBINCAR.png and places a cheap plane mural at the Level 1 track end.
+/// Syncs Assets/ROBINBATOCAR.png (or public/ROBINCAR.png) and places a cheap plane mural at the Level 1 track end.
 /// </summary>
 public static class DutzRobinCarMuralPlacer
 {
     const string Level01ScenePath = "Assets/Scenes/Dutz_Level01.unity";
+    const string AssetsSourcePath = "Assets/ROBINBATOCAR.png";
     const string SourceFileName = "ROBINCAR.png";
     const string TextureAssetPath = "Assets/Characters/HighwayBillboards/Textures/RobinCar.png";
     const string RootName = "DutzRobinCarMural";
@@ -759,12 +760,12 @@ public static class DutzRobinCarMuralPlacer
 
         if (!SyncTexture(force: true))
         {
-            Debug.LogError("[Dutz] Missing public/ROBINCAR.png — add the image and run again.");
+            Debug.LogError("[Dutz] Missing Assets/ROBINBATOCAR.png — add the image and run again.");
             return;
         }
 
         RefreshMuralMaterialInOpenScene();
-        Debug.Log("[Dutz] Robin Car texture synced from public/ROBINCAR.png → " + TextureAssetPath);
+        Debug.Log("[Dutz] Robin Car texture synced → " + TextureAssetPath);
     }
 
     public static bool PlaceOnLevel01(bool log) => PlaceOnScene(Level01ScenePath, log);
@@ -775,7 +776,7 @@ public static class DutzRobinCarMuralPlacer
         if (!scene.IsValid() || scene.path != Level01ScenePath)
             return false;
 
-        // Sync when public/ROBINCAR.png is newer; ignore "already current" as a scene change.
+        // Sync when Assets/ROBINBATOCAR.png is newer; ignore "already current" as a scene change.
         SyncTexture(force: false);
         if (GameObject.Find(RootName) == null)
             return PlaceOnLevel01(log);
@@ -820,7 +821,7 @@ public static class DutzRobinCarMuralPlacer
 
         if (!SyncTexture())
         {
-            Debug.LogError("[Dutz] Missing public/ROBINCAR.png â€” add the image and run again.");
+            Debug.LogError("[Dutz] Missing Assets/ROBINBATOCAR.png — add the image and run again.");
             return false;
         }
 
@@ -947,15 +948,54 @@ public static class DutzRobinCarMuralPlacer
         if (renderer == null || renderer.sharedMaterial == null)
             return false;
 
-        if (renderer.sharedMaterial.mainTexture == texture)
-            return false;
+        var changed = false;
+        if (renderer.sharedMaterial.mainTexture != texture)
+        {
+            renderer.sharedMaterial.mainTexture = texture;
+            changed = true;
+        }
 
-        renderer.sharedMaterial.mainTexture = texture;
-        return true;
+        var aspect = texture.width / (float)Mathf.Max(1, texture.height);
+        var panelWidth = PanelWidthMeters;
+        var panelHeight = panelWidth / Mathf.Max(0.25f, aspect);
+        var targetScale = new Vector3(panelWidth / 10f, 1f, panelHeight / 10f);
+        if (panel.transform.localScale != targetScale)
+        {
+            panel.transform.localScale = targetScale;
+            changed = true;
+        }
+
+        if (changed)
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+
+        return changed;
+    }
+
+    /// <summary>Batch: -executeMethod DutzRobinCarMuralPlacer.SyncRobinCarTextureBatch</summary>
+    public static void SyncRobinCarTextureBatch()
+    {
+        if (!SyncTexture(force: true))
+        {
+            Debug.LogError("[Dutz] Failed to sync Robin Car mural texture.");
+            return;
+        }
+
+        var scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || scene.path != Level01ScenePath)
+            scene = EditorSceneManager.OpenScene(Level01ScenePath, OpenSceneMode.Single);
+
+        RefreshMuralMaterialInOpenScene();
+        EditorSceneManager.SaveScene(scene);
+        Debug.Log("[Dutz] Robin Car mural texture synced on Level Senate.");
     }
 
     static string FindSourcePhoto(string projectRoot)
     {
+        var assetsSource = Path.Combine(
+            projectRoot, AssetsSourcePath.Replace('/', Path.DirectorySeparatorChar));
+        if (File.Exists(assetsSource))
+            return assetsSource;
+
         var exact = Path.Combine(projectRoot, "public", SourceFileName);
         if (File.Exists(exact))
             return exact;

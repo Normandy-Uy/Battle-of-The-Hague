@@ -95,8 +95,8 @@ public class FloodPlayerHealth : MonoBehaviour
         defaultDeathTitle = deathTitle;
         defaultDeathHint = deathHint;
 
-        maxLives = Mathf.Max(1, maxLives);
-        currentLives = maxLives;
+        maxLives = DefaultMaxLives;
+        currentLives = DefaultMaxLives;
 
         currentHitPoints = Mathf.Clamp(currentHitPoints, 0, Mathf.Max(1, maxHitPoints));
         if (currentHitPoints <= 0)
@@ -217,33 +217,17 @@ public class FloodPlayerHealth : MonoBehaviour
 
     void EnsurePermanentShieldVisual()
     {
-        Transform existing = transform.Find("FloodForceFieldVisual");
+        Transform existing = transform.Find(FloodForceFieldVisual.VisualName);
         if (existing != null)
+        {
+            FloodForceFieldVisual.FitToPlayer(existing, transform);
+            FloodForceFieldVisual visual = existing.GetComponent<FloodForceFieldVisual>();
+            if (visual != null)
+                visual.CaptureBaseScale();
             return;
+        }
 
-        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        sphere.name = "FloodForceFieldVisual";
-        sphere.transform.SetParent(transform, false);
-        sphere.transform.localPosition = new Vector3(0f, 1f, 0f);
-        sphere.transform.localScale = Vector3.one * 2.4f;
-
-        Collider collider = sphere.GetComponent<Collider>();
-        if (collider != null)
-            Destroy(collider);
-
-        Shader shader = Shader.Find("Sprites/Default");
-        Material material = new Material(shader);
-        material.color = new Color(0.35f, 0.85f, 1f, 0.24f);
-
-        MeshRenderer renderer = sphere.GetComponent<MeshRenderer>();
-        renderer.sharedMaterial = material;
-        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        renderer.receiveShadows = false;
-        renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
-        renderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
-
-        FloodForceFieldVisual effect = sphere.AddComponent<FloodForceFieldVisual>();
-        effect.ConfigurePermanent(material);
+        FloodForceFieldVisual.SpawnOnPlayer(transform, 0f, permanent: true);
     }
 
     /// <summary>
@@ -699,8 +683,8 @@ public class FloodPlayerHealth : MonoBehaviour
     {
         maxHitPoints = Mathf.Max(1, maxHitPoints);
         currentHitPoints = Mathf.Clamp(currentHitPoints, 0, maxHitPoints);
-        maxLives = Mathf.Max(1, maxLives);
-        currentLives = Mathf.Clamp(currentLives, 0, maxLives);
+        maxLives = DefaultMaxLives;
+        currentLives = DefaultMaxLives;
         respawnInvulnerabilitySeconds = Mathf.Max(0.1f, respawnInvulnerabilitySeconds);
         respawnPullBackDistance = Mathf.Max(0f, respawnPullBackDistance);
     }

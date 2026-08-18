@@ -138,41 +138,19 @@ public static class DutzLevel00TransitionVideo
 }
 
 /// <summary>
-/// Plays public/BATO_ESCAPE.mp4 after Level 1 "GO TO AIRPORT WITH IDOL BOY" before loading Level 2.
+/// Senate (Level 1) no longer plays BATO_ESCAPE.mp4. Kept so win-GUI hide checks stay valid.
 /// </summary>
 public static class DutzLevel01VictoryVideo
 {
     public const string FileName = "BATO_ESCAPE.mp4";
 
-    public static bool IsPlaying { get; private set; }
+    public static bool IsPlaying => false;
 
-    public static bool IsAvailable()
-    {
-#if UNITY_ANDROID && !UNITY_EDITOR
-        return true;
-#else
-        return File.Exists(Path.Combine(Application.streamingAssetsPath, FileName));
-#endif
-    }
+    public static bool IsAvailable() => false;
 
     public static IEnumerator Play()
     {
-        if (!IsAvailable())
-        {
-            Debug.LogWarning(
-                "[Dutz] BATO_ESCAPE.mp4 not found in StreamingAssets.\n" +
-                "Add public/BATO_ESCAPE.mp4 and let the editor sync it on load.");
-            yield break;
-        }
-
-        IsPlaying = true;
-
-        var host = new GameObject("DutzLevel01VictoryVideo");
-        var runner = host.AddComponent<DutzVictoryVideoRunner>();
-        yield return runner.PlayToEnd(DutzVictoryVideoRunner.BuildVideoUrl(FileName), "BATO_ESCAPE");
-
-        IsPlaying = false;
-        Object.Destroy(host);
+        yield break;
     }
 }
 

@@ -24,16 +24,22 @@ public static class DutzCartoonDialogGui
         Red
     }
 
-    // User reference swatches — red #ED1C24, blue #00008F, blue rim #33008F.
-    static readonly Color PlasticRedBase = Hex("#ED1C24");
-    static readonly Color PlasticRedHighlight = Hex("#FF5A62");
-    static readonly Color PlasticRedShadow = Hex("#A50E16");
-    static readonly Color PlasticRedRim = Hex("#000000");
+    // Bright party-balloon plastic — not navy. Candy red + sky blue.
+    static readonly Color PlasticRedBase = Hex("#FF2D2D");
+    static readonly Color PlasticRedHighlight = Hex("#FF9A9A");
+    static readonly Color PlasticRedShadow = Hex("#B01018");
+    static readonly Color PlasticRedRim = Hex("#7A0008");
 
-    static readonly Color PlasticBlueBase = Hex("#00008F");
-    static readonly Color PlasticBlueHighlight = Hex("#3333CC");
-    static readonly Color PlasticBlueShadow = Hex("#00004A");
-    static readonly Color PlasticBlueRim = Hex("#33008F");
+    static readonly Color PlasticBlueBase = Hex("#1EA8FF");
+    static readonly Color PlasticBlueHighlight = Hex("#A6E4FF");
+    static readonly Color PlasticBlueShadow = Hex("#0A5CB8");
+    static readonly Color PlasticBlueRim = Hex("#004A9A");
+
+    static Texture2D balloonBlueTex;
+    static Texture2D balloonRedTex;
+    static GUIStyle balloonBlueStyle;
+    static GUIStyle balloonRedStyle;
+    static GUIStyle balloonLabelStyle;
 
     static Color Hex(string hex)
     {
@@ -64,7 +70,7 @@ public static class DutzCartoonDialogGui
     public static float ContentWidth =>
         PanelWidth - ContentInset * 2f - PanelPadding * 2f;
 
-    public static float ButtonHeight => IsCompactLayout ? Scale(58f, 80f) : Scale(62f, 112f);
+    public static float ButtonHeight => IsCompactLayout ? Scale(68f, 92f) : Scale(74f, 124f);
 
     public static float DismissButtonHeight => IsCompactLayout ? Scale(48f, 64f) : Scale(52f, 88f);
 
@@ -401,7 +407,7 @@ public static class DutzCartoonDialogGui
             "Crossroad chasers (Hard = 30 m/s)",
             buttonLabels,
             detailLines,
-            Application.isMobilePlatform ? "Tap a level to start" : "Pick a level to start"));
+            Application.isMobilePlatform ? "Tap a mode to start" : "Pick a mode to start"));
     }
 
     public static float ShopDialogHeight(
@@ -665,20 +671,30 @@ public static class DutzCartoonDialogGui
 
     public static GUIStyle ActionButtonStyle()
     {
-        return new GUIStyle(GUI.skin.button)
+        if (balloonLabelStyle == null)
         {
-            fontSize = ScaleFont(22, 36),
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleCenter,
-            wordWrap = true,
-            clipping = TextClipping.Overflow,
-            padding = new RectOffset(
-                Mathf.RoundToInt(Scale(10f, 16f)),
-                Mathf.RoundToInt(Scale(10f, 16f)),
-                Mathf.RoundToInt(Scale(8f, 12f)),
-                Mathf.RoundToInt(Scale(8f, 12f))),
-            normal = { textColor = Color.white }
-        };
+            balloonLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                wordWrap = true,
+                clipping = TextClipping.Overflow
+            };
+            balloonLabelStyle.normal.background = null;
+            balloonLabelStyle.hover.background = null;
+            balloonLabelStyle.active.background = null;
+            balloonLabelStyle.normal.textColor = Color.white;
+            balloonLabelStyle.hover.textColor = Color.white;
+            balloonLabelStyle.active.textColor = Color.white;
+        }
+
+        balloonLabelStyle.fontSize = ScaleFont(22, 36);
+        balloonLabelStyle.padding = new RectOffset(
+            Mathf.RoundToInt(Scale(10f, 16f)),
+            Mathf.RoundToInt(Scale(10f, 16f)),
+            Mathf.RoundToInt(Scale(8f, 12f)),
+            Mathf.RoundToInt(Scale(8f, 12f)));
+        return balloonLabelStyle;
     }
 
     public static GUIStyle TextFieldStyle()
@@ -695,17 +711,18 @@ public static class DutzCartoonDialogGui
     public static bool ActionButton(string label, PlasticButtonColor color = PlasticButtonColor.Blue, float? heightOverride = null)
     {
         var buttonHeight = heightOverride ?? MeasureActionButtonHeight(label);
-        var style = ActionButtonStyle();
+        var labelStyle = ActionButtonStyle();
         var rect = GUILayoutUtility.GetRect(
             new GUIContent(label ?? string.Empty),
-            style,
+            labelStyle,
             GUILayout.Height(buttonHeight),
             GUILayout.ExpandWidth(true));
 
+        var pressed = GUI.Button(rect, GUIContent.none, BalloonButtonStyle(color));
         if (Event.current.type == EventType.Repaint)
-            DrawPlasticButton(rect, label, color, style);
+            DrawOutlinedLabel(rect, label, labelStyle, new Color(0.05f, 0.02f, 0.08f, 0.9f));
 
-        return GUI.Button(rect, GUIContent.none, GUIStyle.none);
+        return pressed;
     }
 
     public static bool ActionButtonWithCallback(
@@ -715,17 +732,17 @@ public static class DutzCartoonDialogGui
         Action onPress)
     {
         var buttonHeight = heightOverride ?? MeasureActionButtonHeight(label);
-        var style = ActionButtonStyle();
+        var labelStyle = ActionButtonStyle();
         var rect = GUILayoutUtility.GetRect(
             new GUIContent(label ?? string.Empty),
-            style,
+            labelStyle,
             GUILayout.Height(buttonHeight),
             GUILayout.ExpandWidth(true));
 
+        var pressed = GUI.Button(rect, GUIContent.none, BalloonButtonStyle(color));
         if (Event.current.type == EventType.Repaint)
-            DrawPlasticButton(rect, label, color, style);
+            DrawOutlinedLabel(rect, label, labelStyle, new Color(0.05f, 0.02f, 0.08f, 0.9f));
 
-        var pressed = GUI.Button(rect, GUIContent.none, GUIStyle.none);
         if (onPress != null && DutzImGuiTouchPoll.SessionActive)
             DutzImGuiTouchPoll.Register(rect, onPress);
 
@@ -739,83 +756,108 @@ public static class DutzCartoonDialogGui
         return pressed;
     }
 
-    static void DrawPlasticButton(Rect rect, string label, PlasticButtonColor color, GUIStyle style)
+    static GUIStyle BalloonButtonStyle(PlasticButtonColor color)
     {
-        var baseColor = color == PlasticButtonColor.Blue ? PlasticBlueBase : PlasticRedBase;
-        var highlight = color == PlasticButtonColor.Blue ? PlasticBlueHighlight : PlasticRedHighlight;
-        var shadow = color == PlasticButtonColor.Blue ? PlasticBlueShadow : PlasticRedShadow;
-        var rim = color == PlasticButtonColor.Blue ? PlasticBlueRim : PlasticRedRim;
+        if (color == PlasticButtonColor.Red)
+        {
+            if (balloonRedStyle == null)
+                balloonRedStyle = BuildBalloonStyle(BalloonRedTexture());
+            return balloonRedStyle;
+        }
 
-        var previous = GUI.color;
-        var rimSize = Scale(6f, 10f);
-        var inset = Scale(3f, 5f);
+        if (balloonBlueStyle == null)
+            balloonBlueStyle = BuildBalloonStyle(BalloonBlueTexture());
+        return balloonBlueStyle;
+    }
 
-        // Balloon drop shadow on the yellow panel.
-        var puffY = Scale(6f, 10f);
-        var puffX = Scale(3f, 5f);
-        GUI.color = new Color(0f, 0f, 0f, 0.28f);
-        GUI.DrawTexture(
-            new Rect(rect.x + puffX, rect.y + puffY, rect.width - puffX * 0.5f, rect.height * 0.92f),
-            Texture2D.whiteTexture);
+    static GUIStyle BuildBalloonStyle(Texture2D background)
+    {
+        var style = new GUIStyle
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Bold,
+            wordWrap = false,
+            clipping = TextClipping.Clip,
+            border = new RectOffset(32, 32, 16, 16),
+            margin = new RectOffset(0, 0, 0, 0),
+            padding = new RectOffset(8, 8, 4, 4),
+            overflow = new RectOffset(0, 0, 0, 0)
+        };
+        style.normal.background = background;
+        style.hover.background = background;
+        style.active.background = background;
+        style.focused.background = background;
+        style.onNormal.background = background;
+        style.onHover.background = background;
+        style.onActive.background = background;
+        style.normal.textColor = Color.clear;
+        style.hover.textColor = Color.clear;
+        style.active.textColor = Color.clear;
+        return style;
+    }
 
-        // Thick outer rim — black on red buttons, purple on blue buttons.
-        GUI.color = rim;
-        GUI.DrawTexture(
-            new Rect(rect.x - rimSize, rect.y - rimSize * 0.85f, rect.width + rimSize * 2f, rect.height + rimSize * 1.7f),
-            Texture2D.whiteTexture);
+    static Texture2D BalloonBlueTexture()
+    {
+        if (balloonBlueTex == null)
+        {
+            balloonBlueTex = MakeBalloonSlice(
+                PlasticBlueHighlight, PlasticBlueBase, PlasticBlueShadow, PlasticBlueRim);
+        }
 
-        var body = new Rect(
-            rect.x + inset,
-            rect.y + inset,
-            rect.width - inset * 2f,
-            rect.height - inset * 2f);
+        return balloonBlueTex;
+    }
 
-        // Balloon bulge — lighter dome on top, saturated color on lower curve.
-        var dome = new Rect(body.x, body.y, body.width, body.height * 0.52f);
-        var belly = new Rect(body.x, body.y + body.height * 0.34f, body.width, body.height * 0.66f);
-        GUI.color = highlight;
-        GUI.DrawTexture(dome, Texture2D.whiteTexture);
-        GUI.color = baseColor;
-        GUI.DrawTexture(belly, Texture2D.whiteTexture);
+    static Texture2D BalloonRedTexture()
+    {
+        if (balloonRedTex == null)
+        {
+            balloonRedTex = MakeBalloonSlice(
+                PlasticRedHighlight, PlasticRedBase, PlasticRedShadow, PlasticRedRim);
+        }
 
-        // Side shading to sell the inflated round shape.
-        var sideShadeW = body.width * 0.12f;
-        GUI.color = new Color(shadow.r, shadow.g, shadow.b, 0.45f);
-        GUI.DrawTexture(new Rect(body.x, body.y, sideShadeW, body.height), Texture2D.whiteTexture);
-        GUI.DrawTexture(new Rect(body.xMax - sideShadeW, body.y, sideShadeW, body.height), Texture2D.whiteTexture);
+        return balloonRedTex;
+    }
 
-        // Bottom inner shadow curve.
-        GUI.color = shadow;
-        GUI.DrawTexture(
-            new Rect(body.x + body.width * 0.08f, body.yMax - body.height * 0.22f, body.width * 0.84f, body.height * 0.18f),
-            Texture2D.whiteTexture);
+    static Texture2D MakeBalloonSlice(Color highlight, Color fill, Color shadow, Color rim)
+    {
+        const int width = 128;
+        const int height = 64;
+        const float radius = 31f;
+        var tex = new Texture2D(width, height, TextureFormat.RGBA32, false)
+        {
+            hideFlags = HideFlags.HideAndDontSave,
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp
+        };
 
-        // Primary glossy balloon specular — big bright oval upper-left.
-        var glossMain = new Rect(
-            body.x + body.width * 0.12f,
-            body.y + body.height * 0.12f,
-            body.width * 0.42f,
-            body.height * 0.28f);
-        GUI.color = new Color(1f, 1f, 1f, 0.72f);
-        GUI.DrawTexture(glossMain, Texture2D.whiteTexture);
+        var centerY = (height - 1) * 0.5f;
+        for (var y = 0; y < height; y++)
+        {
+            var fromTop = 1f - (y / (float)(height - 1));
+            var body = fromTop < 0.45f
+                ? Color.Lerp(highlight, fill, fromTop / 0.45f)
+                : Color.Lerp(fill, shadow, (fromTop - 0.45f) / 0.55f);
+            var glossBand = Mathf.Clamp01(1f - Mathf.Abs(fromTop - 0.22f) / 0.18f);
 
-        // Secondary tight highlight dot — wet plastic shine.
-        var glossDot = new Rect(
-            body.x + body.width * 0.58f,
-            body.y + body.height * 0.2f,
-            body.width * 0.12f,
-            body.height * 0.1f);
-        GUI.color = new Color(1f, 1f, 1f, 0.5f);
-        GUI.DrawTexture(glossDot, Texture2D.whiteTexture);
+            for (var x = 0; x < width; x++)
+            {
+                var cx = Mathf.Clamp(x, radius, width - 1 - radius);
+                var dx = x - cx;
+                var dy = y - centerY;
+                var distance = Mathf.Sqrt(dx * dx + dy * dy);
+                var alpha = Mathf.Clamp01(radius - distance + 1.2f);
+                var rimMix = Mathf.Clamp01((distance - (radius - 4.5f)) / 4.5f);
+                var pixel = Color.Lerp(body, rim, rimMix);
+                if (glossBand > 0f && x > width * 0.12f && x < width * 0.48f && fromTop < 0.42f)
+                    pixel = Color.Lerp(pixel, Color.white, glossBand * 0.55f);
 
-        // Thin top rim catch-light.
-        GUI.color = new Color(1f, 1f, 1f, 0.35f);
-        GUI.DrawTexture(
-            new Rect(body.x + body.width * 0.08f, body.y + Scale(1f, 2f), body.width * 0.84f, Scale(2f, 4f)),
-            Texture2D.whiteTexture);
+                pixel.a = alpha;
+                tex.SetPixel(x, y, pixel);
+            }
+        }
 
-        GUI.color = previous;
-        DrawOutlinedLabel(rect, label, style, rim);
+        tex.Apply(false, false);
+        return tex;
     }
 
     public static bool AltActionButton(string label, float? heightOverride = null) =>
@@ -837,7 +879,10 @@ public static class DutzCartoonDialogGui
 
         var shadow = outline ?? new Color(0f, 0f, 0f, 0.85f);
         var offset = Scale(1f, 2f);
-        var shadowStyle = new GUIStyle(style) { normal = { textColor = shadow } };
+        var shadowStyle = new GUIStyle(style);
+        shadowStyle.normal.textColor = shadow;
+        shadowStyle.hover.textColor = shadow;
+        shadowStyle.active.textColor = shadow;
         GUI.Label(new Rect(rect.x - offset, rect.y + offset, rect.width, rect.height), text, shadowStyle);
         GUI.Label(new Rect(rect.x + offset, rect.y + offset, rect.width, rect.height), text, shadowStyle);
         GUI.Label(rect, text, style);
@@ -875,6 +920,8 @@ public static class DutzCartoonDialogGui
         var textHeight = style.CalcHeight(content, innerWidth);
         var innerHeight = Mathf.Max(textHeight, fontSize * 1.2f);
         var y = Screen.height * (IsCompactLayout ? 0.10f + line * 0.08f : 0.22f + line * 0.1f);
+        if (line == 0)
+            y = Mathf.Max(y, DutzUpperLeftHudLayout.YFor(DutzUpperLeftHudLayout.Slot.Parachute) + 12f);
         var textRect = new Rect(
             (Screen.width - innerWidth) * 0.5f,
             y,

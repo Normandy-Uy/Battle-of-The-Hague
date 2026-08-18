@@ -60,7 +60,11 @@ public static class DutzNpcFeet
 
         // Sample once — Level07 giants/crocs keep a fixed scale after spawn.
         // Clamp: bad skinned/static-batch bounds must never cache a sky-launch offset.
-        cached.PivotToFeet = Mathf.Clamp(MeasurePivotToFeet(root, cached), 0.05f, 4f);
+        // Large bosses (BEYBI M is 4.5×) need a scale-aware cap or feet sink into the deck.
+        cached.PivotToFeet = Mathf.Clamp(
+            MeasurePivotToFeet(root, cached),
+            0.05f,
+            MaxPivotToFeetOffset(root));
         cached.HasPivotToFeet = true;
         Cache[id] = cached;
         return cached;
@@ -84,6 +88,12 @@ public static class DutzNpcFeet
         }
 
         return found.ToArray();
+    }
+
+    static float MaxPivotToFeetOffset(GameObject root)
+    {
+        var scaleY = root != null ? Mathf.Abs(root.transform.lossyScale.y) : 1f;
+        return Mathf.Max(4f, 4f * Mathf.Max(1f, scaleY));
     }
 
     static float MeasurePivotToFeet(GameObject root, CachedFeet cached)

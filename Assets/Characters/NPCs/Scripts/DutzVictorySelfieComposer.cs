@@ -14,16 +14,12 @@ public static class DutzVictorySelfieComposer
     const int TemplateWidth = 2126;
     const int TemplateHeight = 2016;
 
-    // Fallback bust slot for the current DUTZSELFIE.png (PNG top-left coords).
-    const int PhotoSlotX = 620;
-    const int PhotoSlotYTop = 1160;
-    const int PhotoSlotWidth = 480;
-    const int PhotoSlotHeight = 400;
-
-    static Color32 GetPixelTopDown(Texture2D texture, int x, int yTop)
-    {
-        return texture.GetPixel(x, texture.height - 1 - yTop);
-    }
+    // White VICTORY SELFIE bust on DUTZSELFIE.png (PNG top-left coords).
+    // Measured from the lower silhouette, not Dutz's face/chest highlights.
+    const int PhotoSlotX = 500;
+    const int PhotoSlotYTop = 1345;
+    const int PhotoSlotWidth = 820;
+    const int PhotoSlotHeight = 610;
 
     public static Texture2D EnsureReadable(Texture2D source)
     {
@@ -102,8 +98,7 @@ public static class DutzVictorySelfieComposer
         var width = template.width;
         var height = template.height;
 
-        if (!TryDetectPhotoSlotFromTemplate(template, width, height, out var slotX, out var slotYTop, out var slotW, out var slotH))
-            ComputePhotoSlotRect(width, height, out slotX, out slotYTop, out slotW, out slotH);
+        ComputePhotoSlotRect(width, height, out var slotX, out var slotYTop, out var slotW, out var slotH);
 
         var output = new Texture2D(width, height, TextureFormat.RGBA32, false);
         output.SetPixels32(template.GetPixels32());
@@ -121,60 +116,6 @@ public static class DutzVictorySelfieComposer
 
         output.Apply();
         return output;
-    }
-
-    static bool TryDetectPhotoSlotFromTemplate(
-        Texture2D template,
-        int width,
-        int height,
-        out int slotX,
-        out int slotYTop,
-        out int slotW,
-        out int slotH)
-    {
-        slotX = slotYTop = slotW = slotH = 0;
-
-        // New template: white bust silhouette sits mid-lower, inside a black frame.
-        // Avoid stadium lights (upper/left) that used to inflate the white AABB.
-        var yScanStart = Mathf.FloorToInt(height * 0.52f);
-        var yScanEnd = Mathf.FloorToInt(height * 0.80f);
-        var xScanStart = Mathf.FloorToInt(width * 0.26f);
-        var xScanEnd = Mathf.FloorToInt(width * 0.56f);
-
-        var minX = width;
-        var maxX = -1;
-        var minYTop = int.MaxValue;
-        var maxYTop = -1;
-
-        for (var yTop = yScanStart; yTop <= yScanEnd; yTop++)
-        {
-            for (var x = xScanStart; x < xScanEnd; x++)
-            {
-                var c = GetPixelTopDown(template, x, yTop);
-                if (c.r < 245 || c.g < 245 || c.b < 245 || c.a < 200)
-                    continue;
-
-                minX = Mathf.Min(minX, x);
-                maxX = Mathf.Max(maxX, x);
-                minYTop = Mathf.Min(minYTop, yTop);
-                maxYTop = Mathf.Max(maxYTop, yTop);
-            }
-        }
-
-        if (maxX < 0 || minYTop == int.MaxValue)
-            return false;
-
-        const int inset = 10;
-        slotX = minX + inset;
-        slotYTop = minYTop + inset;
-        slotW = Mathf.Max(1, maxX - minX + 1 - inset * 2);
-        slotH = Mathf.Max(1, maxYTop - minYTop + 1 - inset * 2);
-
-        slotX = Mathf.Clamp(slotX, 0, Mathf.Max(0, width - 1));
-        slotYTop = Mathf.Clamp(slotYTop, 0, Mathf.Max(0, height - 1));
-        slotW = Mathf.Clamp(slotW, 1, width - slotX);
-        slotH = Mathf.Clamp(slotH, 1, height - slotYTop);
-        return slotW >= 80 && slotH >= 80;
     }
 
     static void BlitCoverWithSetPixel(

@@ -356,11 +356,11 @@ public class DutzPlayerController : MonoBehaviour
 
     /// <summary>
     /// Mid-life respawn near the death pose. Does not reset world progress (pickups, NPCs, timer).
+    /// Active force field (suit, shop, or Senior Citizen) is preserved.
     /// </summary>
     public void RespawnNear(Vector3 worldPos, Quaternion worldRot)
     {
         SetControlsLocked(false);
-        DutzForceField.DeactivateForPlayer(this);
 
         var fallRespawn = GetComponent<DutzFallRespawn>();
         fallRespawn?.BeginSpawnGrace();
@@ -383,6 +383,7 @@ public class DutzPlayerController : MonoBehaviour
             cc.Move(Vector3.down * 0.35f);
 
         GetComponent<DutzPlayerHitPoints>()?.ResetOnRespawn();
+        DutzForceField.RefreshForPlayer(this);
         spawnFacingFramesRemaining = 0;
     }
 
@@ -903,15 +904,17 @@ public static class DutzDifficulty
     public static string GetSpeedSummary(DutzDifficultyLevel level) =>
         GetDifficultyDetailText(level);
 
-    public static bool UsesCrocodileEnemies()
-    {
-        var sceneName = SceneManager.GetActiveScene().name;
-        return sceneName == DutzMobileRuntime.Level01SceneName
-            || sceneName == DutzMobileRuntime.Level02SceneName;
-    }
+    public static bool UsesCrocodileEnemies() =>
+        SceneManager.GetActiveScene().name == DutzMobileRuntime.Level01SceneName;
 
     public static bool IsEdsaLevel() =>
         SceneManager.GetActiveScene().name == DutzMobileRuntime.Level00SceneName;
+
+    public static bool IsAirportLevel() =>
+        SceneManager.GetActiveScene().name == DutzMobileRuntime.Level02SceneName;
+
+    public static bool IsHagueLevel() =>
+        SceneManager.GetActiveScene().name == DutzMobileRuntime.Level03SceneName;
 
     public static float GetEdsaCrossroadCrowdChaseSpeed() =>
         GetCrossroadChaseSpeedForLevel(selected);
@@ -937,8 +940,14 @@ public static class DutzDifficulty
         if (IsEdsaLevel())
             return $"Crossroad chasers (Hard = {HardCrossroadChaseSpeed:0.#} m/s)";
 
+        if (IsAirportLevel())
+            return $"Addict chase speed (Hard = {HardSmallHippieChaseSpeed:0.#} m/s)";
+
         if (UsesCrocodileEnemies())
-            return $"Rallyist + crocodile chase speed (Hard = {HardSmallHippieChaseSpeed:0.#} m/s)";
+            return $"Crocodile chase speed (Hard = {HardSmallHippieChaseSpeed:0.#} m/s)";
+
+        if (IsHagueLevel())
+            return "Giant combat";
 
         return $"Rallyist chase speed (Hard = {HardSmallHippieChaseSpeed:0.#} m/s)";
     }
@@ -958,6 +967,8 @@ public static class DutzDifficulty
                 return "Unlimited force field  •  Super Jump  •  Police cannot capture  •  Score ×1  •  GRAVITY STILL APPLIES.";
             if (sceneName == DutzMobileRuntime.Level02SceneName)
                 return "Unlimited force field  •  Super Jump  •  Score ×1  •  GRAVITY STILL APPLIES.";
+            if (sceneName == DutzMobileRuntime.Level03SceneName)
+                return "Unlimited force field  •  Super Jump  •  Score ×1  •  GRAVITY STILL APPLIES.";
             return "Unlimited force field  •  Score ×1  •  GRAVITY STILL APPLIES.";
         }
 
@@ -968,11 +979,15 @@ public static class DutzDifficulty
             return $"Crossroad chasers {crossroadSpeed:0.#} m/s  •  Score ×{score}";
         }
 
+        if (IsHagueLevel())
+            return $"Giant combat  •  Score ×{score}";
+
         var speed = GetChaseSpeedForLevel(level);
+        if (IsAirportLevel())
+            return $"Addict chase {speed:0.#} m/s  •  Score ×{score}";
+
         if (UsesCrocodileEnemies())
-        {
-            return $"Rallyist chase {speed:0.#} m/s  •  Crocodiles {speed:0.#} m/s  •  Score ×{score}";
-        }
+            return $"Crocodile chase {speed:0.#} m/s  •  Score ×{score}";
 
         return $"Rallyist chase {speed:0.#} m/s  •  Score ×{score}";
     }
@@ -996,7 +1011,7 @@ public static class DutzDifficulty
 
     public static int GetScoreMultiplier() => GetScoreMultiplier(selected);
 
-    /// <summary>Senior Citizen perks: unlimited force field; Super Jump on EDSA, Senate, and Airport.</summary>
+    /// <summary>Senior Citizen perks: unlimited force field; Super Jump on EDSA, Senate, Airport, and Hague.</summary>
     public static void ApplySeniorCitizenPerks(DutzPlayerController player)
     {
         if (player == null || !IsSeniorCitizenMode())
@@ -1014,7 +1029,8 @@ public static class DutzDifficulty
     static bool GrantsSeniorCitizenSuperJump(string sceneName) =>
         sceneName == DutzMobileRuntime.Level00SceneName
         || sceneName == DutzMobileRuntime.Level01SceneName
-        || sceneName == DutzMobileRuntime.Level02SceneName;
+        || sceneName == DutzMobileRuntime.Level02SceneName
+        || sceneName == DutzMobileRuntime.Level03SceneName;
 }
 
 /// <summary>Start-of-game Easy / Medium / Hard picker (small addict chase speed only).</summary>
@@ -1063,6 +1079,9 @@ public class DutzDifficultySelect : MonoBehaviour
 
         if (!bootstrapGateActive || (DutzGameBootstrap.IsReady && !DutzGameBootstrap.HasFailed))
         {
+            if (DutzDifficulty.IsHagueLevel())
+                return;
+
             if (DutzGameplayInput.GetKeyDown(KeyCode.Alpha1) || DutzGameplayInput.GetKeyDown(KeyCode.Keypad1))
                 Choose(DutzDifficultyLevel.Easy);
             else if (DutzGameplayInput.GetKeyDown(KeyCode.Alpha2) || DutzGameplayInput.GetKeyDown(KeyCode.Keypad2))
@@ -1102,24 +1121,17 @@ public class DutzDifficultySelect : MonoBehaviour
         var title = DutzDifficulty.GetDifficultyDialogTitle();
         var subtitle = DutzDifficulty.GetDifficultySubtitle();
         var footer = Application.isMobilePlatform
-            ? "Tap a level to start"
-            : "Pick a level to start (or press 1 / 2 / 3 / 4)";
-
-        var buttonLabels = new[]
+            ? "Tap a mode to start"
+            : "Pick a mode to start";
+        var levels = GetDialogLevels();
+        var buttonLabels = new string[levels.Length];
+        var detailLines = new string[levels.Length];
+        for (var i = 0; i < levels.Length; i++)
         {
-            DutzDifficulty.GetDifficultyButtonLabel(DutzDifficultyLevel.Easy),
-            DutzDifficulty.GetDifficultyButtonLabel(DutzDifficultyLevel.Medium),
-            DutzDifficulty.GetDifficultyButtonLabel(DutzDifficultyLevel.Hard, isDefault: true),
-            DutzDifficulty.GetDifficultyButtonLabel(DutzDifficultyLevel.SeniorCitizen)
-        };
-
-        var detailLines = new[]
-        {
-            DutzDifficulty.GetDifficultyDetailText(DutzDifficultyLevel.Easy),
-            DutzDifficulty.GetDifficultyDetailText(DutzDifficultyLevel.Medium),
-            DutzDifficulty.GetDifficultyDetailText(DutzDifficultyLevel.Hard),
-            DutzDifficulty.GetDifficultyDetailText(DutzDifficultyLevel.SeniorCitizen)
-        };
+            var isDefault = levels[i] == DutzDifficultyLevel.Hard;
+            buttonLabels[i] = DutzDifficulty.GetDifficultyButtonLabel(levels[i], isDefault);
+            detailLines[i] = DutzDifficulty.GetDifficultyDetailText(levels[i]);
+        }
 
         var buttonBlockHeight = DutzCartoonDialogGui.MeasureDifficultyButtonBlockHeight(
             title, subtitle, buttonLabels);
@@ -1157,13 +1169,15 @@ public class DutzDifficultySelect : MonoBehaviour
         GUILayout.Label(subtitle, hintStyle);
         GUILayout.Space(DutzCartoonDialogGui.Scale(10f, 18f));
 
-        DrawDifficultyOption(DutzDifficultyLevel.Easy, DutzCartoonDialogGui.PlasticButtonColor.Blue);
-        GUILayout.Space(DutzCartoonDialogGui.Scale(4f, 8f));
-        DrawDifficultyOption(DutzDifficultyLevel.Medium, DutzCartoonDialogGui.PlasticButtonColor.Red);
-        GUILayout.Space(DutzCartoonDialogGui.Scale(4f, 8f));
-        DrawDifficultyOption(DutzDifficultyLevel.Hard, DutzCartoonDialogGui.PlasticButtonColor.Blue, isDefault: true);
-        GUILayout.Space(DutzCartoonDialogGui.Scale(4f, 8f));
-        DrawDifficultyOption(DutzDifficultyLevel.SeniorCitizen, DutzCartoonDialogGui.PlasticButtonColor.Red);
+        for (var i = 0; i < levels.Length; i++)
+        {
+            if (i > 0)
+                GUILayout.Space(DutzCartoonDialogGui.Scale(4f, 8f));
+            DrawDifficultyOption(
+                levels[i],
+                DutzCartoonDialogGui.ButtonColorForIndex(i),
+                isDefault: levels[i] == DutzDifficultyLevel.Hard);
+        }
         GUILayout.EndArea();
 
         if (detailsHeight > detailsArea.height + 1f)
@@ -1171,34 +1185,48 @@ public class DutzDifficultySelect : MonoBehaviour
             var viewRect = new Rect(0f, 0f, detailsArea.width, detailsHeight);
             var scrollPos = GUI.BeginScrollView(detailsArea, DutzCartoonDialogGui.PanelScrollPosition, viewRect, false, true);
             DutzCartoonDialogGui.PanelScrollPosition = scrollPos;
-            GUILayout.Space(DutzCartoonDialogGui.Scale(4f, 8f));
-            GUILayout.Label(detailLines[0], speedStyle);
-            GUILayout.Space(DutzCartoonDialogGui.Scale(3f, 6f));
-            GUILayout.Label(detailLines[1], speedStyle);
-            GUILayout.Space(DutzCartoonDialogGui.Scale(3f, 6f));
-            GUILayout.Label(detailLines[2], speedStyle);
-            GUILayout.Space(DutzCartoonDialogGui.Scale(3f, 6f));
-            GUILayout.Label(detailLines[3], speedStyle);
-            GUILayout.Space(DutzCartoonDialogGui.Scale(6f, 10f));
-            GUILayout.Label(footer, hintStyle);
+            DrawDifficultyDetails(detailLines, footer, speedStyle, hintStyle);
             GUI.EndScrollView();
         }
         else
         {
             GUILayout.BeginArea(detailsArea);
-            GUILayout.Space(DutzCartoonDialogGui.Scale(4f, 8f));
-            GUILayout.Label(detailLines[0], speedStyle);
-            GUILayout.Space(DutzCartoonDialogGui.Scale(3f, 6f));
-            GUILayout.Label(detailLines[1], speedStyle);
-            GUILayout.Space(DutzCartoonDialogGui.Scale(3f, 6f));
-            GUILayout.Label(detailLines[2], speedStyle);
-            GUILayout.Space(DutzCartoonDialogGui.Scale(3f, 6f));
-            GUILayout.Label(detailLines[3], speedStyle);
-            GUILayout.Space(DutzCartoonDialogGui.Scale(6f, 10f));
-            GUILayout.Label(footer, hintStyle);
+            DrawDifficultyDetails(detailLines, footer, speedStyle, hintStyle);
             GUILayout.EndArea();
         }
         GUI.depth = previousDepth;
+    }
+
+    static DutzDifficultyLevel[] GetDialogLevels()
+    {
+        if (DutzDifficulty.IsHagueLevel())
+            return new[] { DutzDifficultyLevel.Hard, DutzDifficultyLevel.SeniorCitizen };
+
+        return new[]
+        {
+            DutzDifficultyLevel.Easy,
+            DutzDifficultyLevel.Medium,
+            DutzDifficultyLevel.Hard,
+            DutzDifficultyLevel.SeniorCitizen
+        };
+    }
+
+    static void DrawDifficultyDetails(
+        string[] detailLines,
+        string footer,
+        GUIStyle speedStyle,
+        GUIStyle hintStyle)
+    {
+        GUILayout.Space(DutzCartoonDialogGui.Scale(4f, 8f));
+        for (var i = 0; i < detailLines.Length; i++)
+        {
+            if (i > 0)
+                GUILayout.Space(DutzCartoonDialogGui.Scale(3f, 6f));
+            GUILayout.Label(detailLines[i], speedStyle);
+        }
+
+        GUILayout.Space(DutzCartoonDialogGui.Scale(6f, 10f));
+        GUILayout.Label(footer, hintStyle);
     }
 
     void DrawDifficultyOption(

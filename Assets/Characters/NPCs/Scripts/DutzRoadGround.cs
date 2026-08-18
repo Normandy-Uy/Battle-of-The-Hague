@@ -570,6 +570,59 @@ public static class DutzRoadGround
         return true;
     }
 
+    const float Level03GiantWalkDeckY = 6f;
+    const float Level03GiantWalkDeckMaxY = 8f;
+
+    /// <summary>
+    /// Walkable deck nearest to Hague player height (~6), not the AABB lid of Y-scaled highways.
+    /// </summary>
+    public static bool TrySampleRoadDeckNearestToHint(
+        Vector3 worldPosition,
+        float hintY,
+        Collider exclude,
+        out float surfaceY)
+    {
+        surfaceY = hintY;
+        SyncTransformsIfNeeded();
+
+        var origin = new Vector3(worldPosition.x, hintY + 40f, worldPosition.z);
+        var hitCount = RaycastNonAlloc(origin, Vector3.down, 100f);
+        if (hitCount == 0)
+            return false;
+
+        var bestDelta = float.PositiveInfinity;
+        var found = false;
+        for (var i = 0; i < hitCount; i++)
+        {
+            var hit = RaycastBuffer[i];
+            if (hit.collider == null || hit.collider.isTrigger)
+                continue;
+
+            if (exclude != null && IsSelfCollider(hit.collider, exclude))
+                continue;
+
+            if (!IsRoadCollider(hit.collider))
+                continue;
+
+            if (Vector3.Dot(hit.normal.normalized, Vector3.up) < 0.35f)
+                continue;
+
+            var y = hit.point.y;
+            if (y < -2f || y > 18f)
+                continue;
+
+            var delta = Mathf.Abs(y - hintY);
+            if (delta >= bestDelta)
+                continue;
+
+            bestDelta = delta;
+            surfaceY = y;
+            found = true;
+        }
+
+        return found;
+    }
+
     /// <summary>Deck directly under the feet — ignores lips/upper shells (for fall detection while jumping).</summary>
     public static bool TrySampleSupportDeckBelowFeet(
         Vector3 worldPosition,
@@ -637,6 +690,15 @@ public static class DutzRoadGround
         if (TrySampleGiantRoadDeckNearFeet(worldPosition, feetY, exclude, out surfaceY))
             return true;
 
+        // Sunk inside a Y-scaled highway slab — snap to walk height, not the AABB lid.
+        if (TrySampleRoadDeckNearestToHint(
+                worldPosition, Level03GiantWalkDeckY, exclude, out surfaceY))
+        {
+            if (surfaceY > Level03GiantWalkDeckMaxY)
+                surfaceY = Level03GiantWalkDeckY;
+            return true;
+        }
+
         // Sunk below deck — search upward from current feet.
         if (TrySampleRoadDeckNearFeet(
                 worldPosition,
@@ -650,6 +712,43 @@ public static class DutzRoadGround
         }
 
         return TrySampleWalkableRoadDeckY(worldPosition, feetY, exclude, out surfaceY);
+    }
+
+    /// <summary>
+    /// Level 3 giant landing when crossing onto a new highway/bridge.
+    /// Uses a walk-height hint so jumps hit the road deck, not inner shells or cables.
+    /// </summary>
+    public static bool TrySampleLevel03GiantLandingDeck(
+        string segmentName,
+        Vector3 worldPosition,
+        Collider exclude,
+        out float surfaceY)
+    {
+        surfaceY = worldPosition.y;
+        if (string.IsNullOrEmpty(segmentName))
+            return false;
+
+        var isBridge = segmentName.IndexOf("Bridge", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        var hintY = isBridge ? 8f : Level03GiantWalkDeckY;
+        var probe = new Vector3(worldPosition.x, hintY, worldPosition.z);
+
+        if (TrySampleLevel07NamedHighwayDeckPoint(segmentName, probe, out var deckPoint, out _)
+            && deckPoint.y < 22f)
+        {
+            surfaceY = !isBridge && deckPoint.y > Level03GiantWalkDeckMaxY
+                ? Level03GiantWalkDeckY
+                : deckPoint.y;
+            return true;
+        }
+
+        if (TrySampleRoadDeckNearestToHint(probe, hintY, exclude, out surfaceY))
+        {
+            if (!isBridge && surfaceY > Level03GiantWalkDeckMaxY)
+                surfaceY = Level03GiantWalkDeckY;
+            return true;
+        }
+
+        return TrySampleGiantRoadDeckY(worldPosition, hintY, exclude, out surfaceY);
     }
 
     static bool TrySampleGiantRoadDeckNearFeet(
@@ -672,7 +771,8 @@ public static class DutzRoadGround
         var segment = DutzHighwayDirection.FindNearestTrackSegment(worldPosition);
         if (segment == null
             || segment.name.IndexOf("Bridge", System.StringComparison.OrdinalIgnoreCase) < 0
-            || Mathf.Abs(worldPosition.z) <= 1f)
+            || Mathf.Abs(worldPosition.z) <= 1f
+            || DutzCollectibleProgress.IsLevel03)
         {
             return true;
         }

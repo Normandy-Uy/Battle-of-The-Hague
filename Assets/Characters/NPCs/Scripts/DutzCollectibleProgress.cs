@@ -48,6 +48,10 @@ public static class DutzCollectibleProgress
             return;
 
         transform.localScale = GetLevel03EndBossScale();
+        Physics.SyncTransforms();
+        DutzNpcFeet.Invalidate(transform.gameObject);
+        transform.GetComponent<SimpleCitizensNpcPhysics>()?.SnapFeetToRoad();
+        transform.GetComponent<SimpleCitizensNpcRespawn>()?.RecordSpawnPoint();
     }
 
     public static Vector3 GetLevel03EndEtOlScale() => GetLevel03EndBossScale();
